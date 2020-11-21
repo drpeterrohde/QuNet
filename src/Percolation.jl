@@ -2,6 +2,11 @@ function percolate_vertices(graph::AbstractGraph, p)::AbstractGraph
     return percolate_vertices(graph, p, [0])
 end
 
+"""
+    percolate_vertices(graph, p, exclude)
+
+Perform vertex percolation on graph with probability p, excluding specified vertices.
+""" 
 function percolate_vertices(graph::AbstractGraph, p, exclude::Array{Int64})::AbstractGraph
     perc_graph = deepcopy(graph)
 

@@ -13,19 +13,28 @@ function path_length(graph, path)::Float64
     return dist
 end
 
-function greedy_multi_path!(graph::AbstractGraph, src::Int64, dest::Int64; maxpaths=2)
-    paths = []
+function greedy_multi_path!(graph::AbstractGraph, users::Array{Tuple{Int64,Int64}}; maxpaths=2)
+    user_paths = []
+    
+    for user in users
+        src = user[1]
+        dest = user[2]
 
-    for i in 1:maxpaths
-        path = remove_shortest_path!(graph, src, dest)
-        if length(path) == 0
-            break
-        else
-            push!(paths, path)
+        paths = []
+
+        for i in 1:maxpaths
+            path = remove_shortest_path!(graph, src, dest)
+            if length(path) == 0
+                break
+            else
+                push!(paths, path)
+            end
         end
+
+        push!(user_paths, paths)    
     end
 
-    return paths
+    return user_paths
 end
 
 function remove_shortest_path!(graph::AbstractGraph, src::Int64, dest::Int64)

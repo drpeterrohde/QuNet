@@ -21,6 +21,7 @@ include("Channel.jl")
 include("TemporalGraphs.jl")
 include("Percolation.jl")
 include("Routing.jl")
+include("Plot.jl")
 include("Utilities.jl")
 include("Benchmarking.jl")
 

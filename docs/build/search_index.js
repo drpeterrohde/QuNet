@@ -1,0 +1,3 @@
+var documenterSearchIndex = {"docs":
+[{"location":"#QuNet","page":"QuNet","title":"QuNet","text":"","category":"section"},{"location":"","page":"QuNet","title":"QuNet","text":"CurrentModule = QuNet","category":"page"},{"location":"","page":"QuNet","title":"QuNet","text":"QNetwork\npercolate_vertices","category":"page"},{"location":"#Main.QuNet.QNetwork","page":"QuNet","title":"Main.QuNet.QNetwork","text":"QNetwork(graph)\n\nNetwork constructor from graph.\n\n\n\n\n\n","category":"type"},{"location":"#Main.QuNet.percolate_vertices","page":"QuNet","title":"Main.QuNet.percolate_vertices","text":"percolate_vertices(graph, p, exclude)\n\nPerform vertex percolation on graph with probability p, excluding specified vertices.\n\n\n\n\n\n","category":"function"}]
+}

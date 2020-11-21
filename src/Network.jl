@@ -11,6 +11,11 @@ function refresh_graph(network::QNetwork)
     network.graph = TemporalGraph(network, 1).graph
 end
 
+"""
+    QNetwork(graph)
+
+Network constructor from graph.
+"""
 function QNetwork(graph::AbstractGraph)
     network = QNetwork()
 
