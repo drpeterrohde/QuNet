@@ -1,5 +1,5 @@
-function shortest_path(graph::AbstractGraph, src::Int64, dest::Int64)
-    path = a_star(SimpleDiGraph(graph), src, dest, graph.weights)
+function shortest_path(graph::AbstractGraph, src::Int64, dst::Int64)
+    path = a_star(SimpleDiGraph(graph), src, dst, graph.weights)
     return path
 end
 
@@ -18,12 +18,12 @@ function greedy_multi_path!(graph::AbstractGraph, users::Array{Tuple{Int64,Int64
     
     for user in users
         src = user[1]
-        dest = user[2]
+        dst = user[2]
 
         paths = []
 
         for i in 1:maxpaths
-            path = remove_shortest_path!(graph, src, dest)
+            path = remove_shortest_path!(graph, src, dst)
             if length(path) == 0
                 break
             else
@@ -37,8 +37,8 @@ function greedy_multi_path!(graph::AbstractGraph, users::Array{Tuple{Int64,Int64
     return user_paths
 end
 
-function remove_shortest_path!(graph::AbstractGraph, src::Int64, dest::Int64)
-    path = shortest_path(graph, src, dest)
+function remove_shortest_path!(graph::AbstractGraph, src::Int64, dst::Int64)
+    path = shortest_path(graph, src, dst)
 
     for edge in path
         status = rem_edge!(graph, edge.dst, edge.src)

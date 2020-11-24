@@ -2,9 +2,9 @@ mutable struct QNetwork <: QObject
     name::String
     nodes::Array{QNode}
     channels::Array{QChannel}
-    graph::AbstractGraph
+    graph::Dict
 
-    QNetwork() = new("QuNet", [], [], SimpleWeightedDiGraph())
+    QNetwork() = new("QuNet", [], [], Dict())
 end
 
 function refresh_graph(network::QNetwork)
@@ -38,7 +38,6 @@ end
 function GridNetwork(dimX::Int64, dimY::Int64)
     graph = LightGraphs.grid([dimX,dimY])
     net = QNetwork(graph)
-    refresh_graph(net)
 
     for x in 1:dimX
         for y in 1:dimY
@@ -47,6 +46,7 @@ function GridNetwork(dimX::Int64, dimY::Int64)
         end
     end
 
+    refresh_graph(net)
     return net
 end
 

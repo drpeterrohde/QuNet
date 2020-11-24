@@ -1,4 +1,4 @@
-function plot_network(graph::AbstractGraph, user_paths)
+function plot_network(graph::AbstractGraph, user_paths, locs_x, locs_y)
     used_edges = []
     used_by = Dict()
     
@@ -26,14 +26,6 @@ function plot_network(graph::AbstractGraph, user_paths)
             push!(widths, 1)
         end
     end
-    
-    # locs_x = Vector{Float64}()
-    # locs_y = Vector{Float64}()
 
-    # for node in network.nodes
-    #     push!(locs_x, node.location.x)
-    #     push!(locs_y, node.location.y)
-    # end
-
-    gplot(graph, edgestrokec=colour_pal[colours], edgelinewidth=widths, arrowlengthfrac=0.04, layout=spring_layout)
+    gplot(graph, locs_x, locs_y, edgestrokec=colour_pal[colours], edgelinewidth=widths, arrowlengthfrac=0.04)#, layout=spring_layout)
 end
