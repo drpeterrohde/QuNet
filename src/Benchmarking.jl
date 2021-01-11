@@ -59,3 +59,13 @@ function percolation_bench(graph::AbstractGraph, incr::Float64, iter::Int64; typ
 
     return (p1,p2)
 end
+
+# Initialising correctly
+function purify_bench(net::QNetwork,
+                            users::Array{Tuple{Int64,Int64}},
+                            maxpaths=2)
+    println("Hello world!")
+    QuNet.greedy_multi_path!(net, users, maxpaths)
+
+    # Where are the costs stored?
+end

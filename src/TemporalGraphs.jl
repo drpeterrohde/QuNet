@@ -3,6 +3,7 @@ mutable struct TemporalGraph
     graph::Dict
     nv::Int64
     steps::Int64
+    # Visual coordinates
     locs_x::Vector{Float64}
     locs_y::Vector{Float64}
 
@@ -59,5 +60,3 @@ end
 function gplot(temp_graph::TemporalGraph)
     gplot(temp_graph.graph["loss"], temp_graph.locs_x, temp_graph.locs_y, arrowlengthfrac=0.04)
 end
-
-

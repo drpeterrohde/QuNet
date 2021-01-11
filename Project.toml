@@ -1,0 +1,13 @@
+name = "QuNet"
+uuid = "ad9aa78f-8ca5-41a8-8827-8681ea26ae9b"
+authors = ["Peter Rohde" <dr.rohde@gmail.com>], ["Hudson Leone <leoneht0@gmail.com>]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

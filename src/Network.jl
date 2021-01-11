@@ -2,6 +2,7 @@ mutable struct QNetwork <: QObject
     name::String
     nodes::Array{QNode}
     channels::Array{QChannel}
+    # Dictionary between costs and corresponding weighted graphs.
     graph::Dict
 
     QNetwork() = new("QuNet", [], [], Dict())

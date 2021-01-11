@@ -5,7 +5,7 @@ end
 
 function path_length(graph, path)::Float64
     dist = 0.0
-
+greedy_multi_path
     for edge in path
         dist += SimpleWeightedDiGraph(graph).weights[edge.src, edge.dst]
     end
@@ -31,7 +31,7 @@ function greedy_multi_path!(graph::AbstractGraph, users::Array{Tuple{Int64,Int64
             end
         end
 
-        push!(user_paths, paths)    
+        push!(user_paths, paths)
     end
 
     return user_paths
