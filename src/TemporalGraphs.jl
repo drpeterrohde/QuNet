@@ -15,7 +15,7 @@ function TemporalGraph(network::QNetwork, steps::Int64)::TemporalGraph
     temp_graph.nv = length(network.nodes)
     temp_graph.steps = steps
 
-    for cost_key in keys(ZeroCostVector())
+    for cost_key in keys(zero_costvector())
         temp_graph.graph[cost_key] = SimpleWeightedDiGraph()
 
         for t in 1:steps

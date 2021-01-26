@@ -17,6 +17,7 @@ function percolation_bench(graph::AbstractGraph, incr::Float64, iter::Int64; typ
                 print("ERROR: Unknown percolation type.")
                 return
             end
+            # TODO, swap shortest_path out with greedy shortest path
             path = shortest_path(perc_graph, 1, nv(graph))
             if length(path) != 0
                 dist = path_length(perc_graph, path)
