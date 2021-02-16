@@ -73,7 +73,7 @@ end
 
 Does nothing
 """
-function update(node::QNode)
+function update(node::QNode, old_time::Float64, new_time::Float64)
 end
 
 
@@ -139,10 +139,10 @@ end
 Update the position of a planar satellite node by incrementing its current
 location with the distance covered by its velocity in `TIME_STEP` seconds.
 """
-function update(sat::PlanSatNode)
+function update(sat::PlanSatNode, old_time::Float64, new_time::Float64)
     # Calculate new position from velocity
-    sat.location.x += sat.velocity.x * TIME_STEP
-    sat.location.y += sat.velocity.y * TIME_STEP
-    sat.location.z += sat.velocity.z * TIME_STEP
+    sat.location.x += sat.velocity.x * (new_time - old_time)
+    sat.location.y += sat.velocity.y * (new_time - old_time)
+    sat.location.z += sat.velocity.z * (new_time - old_time)
     return
 end

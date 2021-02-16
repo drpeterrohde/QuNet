@@ -1,26 +1,3 @@
-function gplot(network::QNetwork, cost::String, uselocs::Bool=false)
-    # refresh_graph(network)
-    @assert cost in keys(zero_costvector()) "Invalid cost"
-
-    # If using coordinates
-    if uselocs == true
-        locs_x = Vector{Float64}()
-        locs_y = Vector{Float64}()
-
-        for node in network.nodes
-            push!(locs_x, node.location.x)
-            push!(locs_y, node.location.y)
-        end
-        gplot(network.graph[cost], locs_x, locs_y)
-
-    else
-        layout = (args...)->spring_layout(args...; C=20)
-        gplot(network.graph[cost], layout=layout, NODESIZE=0.2/network.graph[cost].nv)
-        #gplot(network.graph, locs_x, locs_y, nodelabel=1:nv(network.graph))
-    end
-end
-
-
 function plot_network(graph::AbstractGraph, user_paths, locs_x, locs_y)
     used_edges = []
     used_by = Dict()

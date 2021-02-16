@@ -5,28 +5,9 @@ Add a channel to the network
 """
 function add(network::QNetwork, channel::QChannel)
     push!(network.channels, channel)
-    for cost_key in keys(zero_costvector())
-        add_edge!(network.graph[cost_key], channel.src.id, channel.dest.id)
-    end
 end
 
-"""
-    refresh(network::QNetwork, channel::QChannel)
-
-Write the QNetwork structure into LightGraph Weighted graphs, then "refresh"
-the QNetwork.graph attribute with these new graphs.
-"""
-function refresh(network::QNetwork, channel::QChannel)
-    for cost_key in keys(zero_costvector())
-        add_edge!(network.graph[cost_key], channel.src.id, channel.dest.id)
-        if directed == false
-            add_edge!(network.graph[cost_key], channel.dest.id, channel.src.id)
-        end
-    end
-end
-
-
-function update(channel::QChannel)
+function update(channel::QChannel, old_time::Float64, new_time::Float64)
 end
 
 
@@ -56,15 +37,22 @@ mutable struct BasicChannel <: QChannel
     active::Bool
     directed::Bool
 
-    function BasicChannel(src::QNode, dest::QNode)
+    """
+    Initalise a Basic Channel with unit costs
+    """
+    function BasicChannel(src::QNode, dest::QNode, ;exp_cost::Bool=false)
         tmpchannel = new("", unit_costvector(), src, dest, distance(src, dest), true, false)
-        tmpchannel.costs = cost(tmpchannel)
+        if exp_cost == true
+            tmpchannel.costs = cost(tmpchannel)
+        end
         return tmpchannel
     end
 
-    function BasicChannel(name::String, src::QNode, dest::QNode)
+    function BasicChannel(name::String, src::QNode, dest::QNode, exp_cost::Bool=false)
         tmpchannel = new(name, unit_costvector(), src, dest, distance(src, dest), true, false)
-        tmpchannel.costs = cost(tmpchannel)
+        if exp_cost == true
+            tmpchannel.costs = cost(tmpchannel)
+        end
         return tmpchannel
     end
 
@@ -74,7 +62,6 @@ end
 
 function cost(channel::BasicChannel)
     d = channel.length
-    α = 0.001
     β = 0.001
     loss = P_to_dB(exp(-β * d))
     Z = Z_to_dB((1 + exp(-β * d))/2)
@@ -136,7 +123,8 @@ function cost(channel::AirChannel)
     return costVector
 end
 
-function update(channel::AirChannel)
+
+function update(channel::AirChannel, old_time::Float64, new_time::Float64)
     channel.length = distance(channel.src, channel.dest)
     channel.costs = cost(channel)
 end

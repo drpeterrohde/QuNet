@@ -43,8 +43,8 @@ function purify_CNOT(F1::Float64,F2::Float64)::(Float64,Float64)
     return (F,P)
 end
 
-# This function purifies all vectors together
-function purify(cost_vectors::Array{Dict{Any,Any}, 1}, return_as_dB::Bool=true)
+
+function purify(cost_vectors::Vector{Dict{Any,Any}}, return_as_dB::Bool=true)
     @assert keys(zero_costvector()) == keys(cost_vectors[1]) "Incompatible keys"
     p_arr = [dB_to_P(i["loss"]) for i in cost_vectors]
     z_arr = [dB_to_Z(i["Z"]) for i in cost_vectors]
@@ -53,8 +53,25 @@ function purify(cost_vectors::Array{Dict{Any,Any}, 1}, return_as_dB::Bool=true)
     z = prod(z_arr) / ((prod(z_arr) + prod(1 .- z_arr)))
 
     if return_as_dB == true
-        return P_to_dB(p), Z_to_dB(z)
+        return Dict("loss"=>P_to_dB(p), "Z"=>Z_to_dB(z))
     else
-        return p, z
+        return Dict("loss"=>p, "Z"=>z)
     end
 end
+
+
+function purify(paths::Vector{<:QChannel}, return_as_dB::Bool=true)
+    cost_vectors = Vector{Dict}()
+    for path in paths
+        cost = get_pathcost(path)
+        push!(cost_vectors, cost)
+    end
+    purify(cost_vectors, return_as_dB)
+end
+
+"""
+function purify(paths::Vector{AbsractEdge}, return_as_dB::Bool=true)
+    cost_vectors = Vector{Dict}()
+    for path in paths
+        cost = path_length
+"""

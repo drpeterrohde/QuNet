@@ -24,10 +24,13 @@ function TemporalGraph(network::QNetwork, steps::Int64)::TemporalGraph
 
             # Channels
             for channel in network.channels
-                src = findfirst(x -> x == channel.src, network.nodes) + (t-1)*temp_graph.nv
-                dest = findfirst(x -> x == channel.dest, network.nodes) + (t-1)*temp_graph.nv
-                weight = channel.costs[cost_key]
-                add_edge!(temp_graph.graph[cost_key], src, dest, weight)
+                if channel.active == true
+                    src = findfirst(x -> x == channel.src, network.nodes) + (t-1)*temp_graph.nv
+                    dest = findfirst(x -> x == channel.dest, network.nodes) + (t-1)*temp_graph.nv
+                    weight = channel.costs[cost_key]
+                    add_edge!(temp_graph.graph[cost_key], src, dest, weight)
+                    add_edge!(temp_graph.graph[cost_key], dest, src, weight)
+                end
             end
         end
 
