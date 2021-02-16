@@ -4,7 +4,6 @@
 CurrentModule = QuNet
 ```
 
-```@docs
-QNetwork
-percolate_vertices
+```@autodocs
+Modules = [QuNet]
 ```
