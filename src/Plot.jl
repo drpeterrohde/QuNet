@@ -1,9 +1,9 @@
 function plot_network(graph::AbstractGraph, user_paths, locs_x, locs_y)
     used_edges = []
     used_by = Dict()
-    
+
     colour_pal = [colorant"lightgrey", colorant"orange", colorant"lightslateblue", colorant"green"]
-    
+
     this_user = 0
     for paths in user_paths
         this_user += 1

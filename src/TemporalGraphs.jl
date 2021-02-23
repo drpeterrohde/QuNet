@@ -3,6 +3,7 @@ mutable struct TemporalGraph
     graph::Dict
     nv::Int64
     steps::Int64
+    # Visual coordinates
     locs_x::Vector{Float64}
     locs_y::Vector{Float64}
 
@@ -14,7 +15,7 @@ function TemporalGraph(network::QNetwork, steps::Int64)::TemporalGraph
     temp_graph.nv = length(network.nodes)
     temp_graph.steps = steps
 
-    for cost_key in keys(ZeroCostVector())
+    for cost_key in keys(zero_costvector())
         temp_graph.graph[cost_key] = SimpleWeightedDiGraph()
 
         for t in 1:steps
@@ -23,10 +24,13 @@ function TemporalGraph(network::QNetwork, steps::Int64)::TemporalGraph
 
             # Channels
             for channel in network.channels
-                src = findfirst(x -> x == channel.src, network.nodes) + (t-1)*temp_graph.nv
-                dest = findfirst(x -> x == channel.dest, network.nodes) + (t-1)*temp_graph.nv
-                weight = channel.costs[cost_key]
-                add_edge!(temp_graph.graph[cost_key], src, dest, weight)
+                if channel.active == true
+                    src = findfirst(x -> x == channel.src, network.nodes) + (t-1)*temp_graph.nv
+                    dest = findfirst(x -> x == channel.dest, network.nodes) + (t-1)*temp_graph.nv
+                    weight = channel.costs[cost_key]
+                    add_edge!(temp_graph.graph[cost_key], src, dest, weight)
+                    add_edge!(temp_graph.graph[cost_key], dest, src, weight)
+                end
             end
         end
 
@@ -59,5 +63,3 @@ end
 function gplot(temp_graph::TemporalGraph)
     gplot(temp_graph.graph["loss"], temp_graph.locs_x, temp_graph.locs_y, arrowlengthfrac=0.04)
 end
-
-

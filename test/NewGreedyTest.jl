@@ -1,3 +1,7 @@
+using QuNet
+using LightGraphs, SimpleWeightedGraphs, GraphPlot, MetaGraphs, Plots, Colors, Statistics
+using LaTeXStrings
+
 """
 Takes a network as input and return statistics for the graph tested against
 many instances of the greedy_multi_path! routing algorithm for some number of
@@ -39,6 +43,44 @@ function net_performance(network::QNetwork, num_trials::Int64, num_pairs::Int64,
 
     pfmnce_data = dict_average(pfmnce_data)
     return pfmnce_data, total_collisions
+end
+
+
+"""
+Plot the performance data of greedy_path for some number of trials
+    vs the number of end user pairs
+"""
+function plot_with_userpairs(max_pairs::Int64,
+    num_trials::Int64)
+
+    perf_data = []
+    collision_data = []
+
+    for i in 1:max_pairs
+        println("Collecting for pairsize: $i")
+        # Generate 10x10 graph:
+        net = GridNetwork(10, 10)
+
+        # Collect performance statistics
+        performance, collisions = net_performance(net, num_trials, i)
+        collision_rate = collisions/(num_trials*i)
+        push!(collision_data, collision_rate)
+        push!(perf_data, performance)
+    end
+
+    # Get values for x axis
+    x = collect(1:max_pairs)
+
+    # Extract data from performance data
+    loss_arr = collect(map(x->x["loss"], perf_data))
+    z_arr = collect(map(x->x["Z"], perf_data))
+
+    # Plot
+    plot(x, collision_data, ylims=(0,1), linewidth=2, label=L"$P_s$",
+    legend=:bottomright)
+    plot!(x, loss_arr, linewidth=2, label=L"$\eta$")
+    plot!(x, z_arr, linewidth=2, label=L"$F$")
+    xaxis!(L"$\textrm{Number of End User Pairs}$")
 end
 
 
@@ -109,46 +151,8 @@ function make_user_pairs(QNetwork, num_pairs)
     return pairs
 end
 
-# TODO: Move to Plot.jl?
-"""
-Plot the performance data of greedy_path for some number of trials
-    vs the number of end user pairs
-"""
-function plot_with_userpairs(max_pairs::Int64,
-    num_trials::Int64)
 
-    perf_data = []
-    collision_data = []
-
-    for i in 1:max_pairs
-        println("Collecting for pairsize: $i")
-        # Generate 10x10 graph:
-        net = GridNetwork(10, 10)
-
-        # Collect performance statistics
-        performance, collisions = net_performance(net, num_trials, i)
-        collision_rate = collisions/(num_trials*i)
-        push!(collision_data, collision_rate)
-        push!(perf_data, performance)
-    end
-
-    # Get values for x axis
-    x = collect(1:max_pairs)
-
-    # Extract data from performance data
-    loss_arr = collect(map(x->x["loss"], perf_data))
-    z_arr = collect(map(x->x["Z"], perf_data))
-
-    # Plot
-    plot(x, collision_data, ylims=(0,1), linewidth=2, label=L"$P_s$",
-    legend=:bottomright)
-    plot!(x, loss_arr, linewidth=2, label=L"$\eta$")
-    plot!(x, z_arr, linewidth=2, label=L"$F$")
-    xaxis!(L"$\textrm{Number of End User Pairs}$")
-end
-
-
-# TODO: Move to Plot.jl?
+# TODO
 function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, num_trials::Int64)
 
     # Network to be percolated.
@@ -191,6 +195,11 @@ function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, nu
     loss_error = collect(map(x->x["loss"], err_data))
     z_error = collect(map(x->x["Z"], err_data))
 
+    # DEBUG
+    println(loss_error)
+    println(z_error)
+
+    # TODO replace nothing with nan
     loss_arr = replace(loss_arr, nothing=>NaN)
     z_arr = replace(z_arr, nothing=>NaN)
 
@@ -216,69 +225,11 @@ function plot_collisions_with_timedepth(network::QNetwork, num_trials::Int64,
         # Collect statistics
 """
 
-# TODO Redundent function
-"""
-function percolation_bench(graph::AbstractGraph, incr::Float64, iter::Int64; type="edge")
-    avs = []
-    vars = []
-    points = []
-    exists = []
 
-    p_range = 0:incr:1
+# Q = GridNetwork(10, 10)
+# Usage: QNetwork, num_trials, num_pairs
+# result = net_performance(Q, 100, 1, true)
+# println(result)
 
-    for p in p_range
-        data = []
-        for i in 1:iter
-            if type=="edge"
-                perc_graph = percolate_edges(graph, p)
-            elseif type=="vertex"
-                perc_graph = percolate_vertices(graph, p, [1,nv(graph)])
-            else
-                print("ERROR: Unknown percolation type. Choose from \"edge\" or
-                 \"vertex\"")
-                return
-            end
-            # TODO, swap shortest_path out with greedy shortest path
-            path = shortest_path(perc_graph, 1, nv(graph))
-            if length(path) != 0
-                dist = path_length(perc_graph, path)
-                push!(data, dist)
-            end
-        end
-
-        p_exists = Float64(length(data)) / iter
-
-        if length(data) != 0
-            push!(points, p)
-            push!(avs, mean(data))
-            push!(vars, var(data))
-        end
-
-        push!(exists, p_exists)
-    end
-
-    p1 = plot(p_range, exists, legend=false, grid=true, xlims=(0,1), ylims=(0,1), lw=2, fillalpha=0.2)
-    if type == "edge"
-        xlabel!(L"p_\mathrm{edge}")
-        ylabel!(L"p_\mathrm{path}")
-        title!("Edge percolation")
-    elseif type == "vertex"
-        xlabel!(L"p_\mathrm{vertex}")
-        ylabel!(L"p_\mathrm{path}")
-        title!("Vertex percolation")
-    end
-
-    p2 = scatter(points, avs, yerror=vars, legend=false, grid=true, xlims=(0,1), ylims=(0,maximum(avs)), lw=2, fillalpha=0.2)
-    if type == "edge"
-        xlabel!(L"p_\mathrm{edge}")
-        ylabel!(L"L")
-        title!("Edge percolation")
-    elseif type == "vertex"
-        xlabel!(L"p_\mathrm{vertex}")
-        ylabel!(L"L")
-        title!("Vertex percolation")
-    end
-
-    return (p1,p2)
-end
-"""
+# plot_with_userpairs(40, 100)
+plot_with_percolations((0.0, 0.05, 0.9), 100)
