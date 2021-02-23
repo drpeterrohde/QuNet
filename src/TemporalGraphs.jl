@@ -59,10 +59,6 @@ function TemporalGraph(network::QNetwork, steps::Int64)::TemporalGraph
     # fix up edge weights
 end
 
-
-# TODO: This is ok, but it shouldn't take a QNetwork as an object. Should take
-# Whatever the temporal graph structure is
-
 function add_async_nodes!(tempnet::QuNet.TemporalGraph)
     # Minimal weight constant
     ϵ = 1e-9

@@ -355,6 +355,6 @@ end
 
 # MAIN
 # plot_with_userpairs(40, 100000)
-println("Beginning plot_with_percolations")
-plot_with_percolations((0.0, 0.01, 0.7), 100000)
-# plot_with_timedepth(500, 20)
+# println("Beginning plot_with_percolations")
+# plot_with_percolations((0.0, 0.01, 0.7), 100000)
+plot_with_timedepth(1, 20)
