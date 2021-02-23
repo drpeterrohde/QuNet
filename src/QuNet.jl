@@ -62,7 +62,7 @@ gplot,
 hard_rem_edge!,
 
 # Routing.jl
-shortest_path, greedy_multi_path!,
+shortest_path,
 
 # TemporalGraphs.jl
 
