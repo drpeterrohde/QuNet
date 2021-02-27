@@ -235,7 +235,6 @@ function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, nu
         # Collect performance data (with variance) and collision count
         num_pairs = 3
 
-        # WARNING possibly deadly line break here
         performance, errors, collisions, ave_paths_used, ave_path_err =
         net_performance(perc_net, num_trials, num_pairs, true)
 
@@ -317,6 +316,17 @@ function plot_with_timedepth(num_trials::Int64, max_depth::Int64)
         push!(err_data, errors)
     end
 
+    # Collect data for horizontal lines:
+    # single-user-single-path
+    susp = analytic_single_user_single_path_cost(grid_size)
+    e_susp = ones(length(1:max_depth)) * susp[1]
+    f_susp = ones(length(1:max_depth)) * susp[2]
+    # single-user-multi-path
+    println("Collecting data for sump")
+    sump = numerical_single_user_multi_path_cost(grid_size)
+    e_sump = ones(length(1:max_depth)) * sump[1]
+    f_sump = ones(length(1:max_depth)) * sump[2]
+
     # Get values for x axis
     x = collect(1:max_depth)
 
@@ -328,7 +338,6 @@ function plot_with_timedepth(num_trials::Int64, max_depth::Int64)
     loss_error = collect(map(x->x["loss"], err_data))
     z_error = collect(map(x->x["Z"], err_data))
 
-    # TODO Figure out why errors are so small?
     # Save data to csv
     file = "temporal.csv"
     writedlm(file,  ["Efficiency", loss_arr,
@@ -341,10 +350,95 @@ function plot_with_timedepth(num_trials::Int64, max_depth::Int64)
     legend=:topright)
     plot!(x, loss_arr, seriestype = :scatter, marker = (5), yerror = loss_error, label=L"$\eta$")
     plot!(x, z_arr, seriestype = :scatter, marker = (5), yerror = z_error, label=L"$F$")
+
+    # Plot horizontal lines
+    plot!(x, e_susp, linestyle=:dash, color=:red, label=L"$\textrm{Average path } \eta$")
+    plot!(x, f_susp, linestyle=:dash, color=:green, label=L"$\textrm{Average path } F$")
+    plot!(x, e_sump, linestyle=:dot, color=:red, linewidth=2, label=L"$\textrm{Asymptotic single-pair } \eta$")
+    plot!(x, f_sump, linestyle=:dot, color=:green, linewidth=2, label=L"$\textrm{Asymptotic single-pair } F$")
+
     xaxis!(L"$\textrm{Time Depth of Temporal Meta-Graph}$")
     savefig("temporal.pdf")
     savefig("temporal.png")
 end
+
+
+function plot_with_gridsize(num_trials::Int64, num_pairs::Int64, min_size::Int64, max_size::Int64)
+    @assert min_size < max_size
+    @assert num_pairs*2 <= min_size^2 "Graph size too small for num_pairs"
+
+    perf_data = []
+    collision_data = []
+    path_data = []
+
+    size_list = collect(min_size:1:max_size)
+    for i in size_list
+        println("Collecting for gridsize: $i")
+        # Generate ixi graph:
+        net = GridNetwork(i, i)
+
+        # Collect performance statistics
+        performance, collisions, ave_paths_used = net_performance(net, num_trials, num_pairs)
+        collision_rate = collisions/(num_trials*num_pairs)
+        push!(collision_data, collision_rate)
+        push!(perf_data, performance)
+        push!(path_data, ave_paths_used)
+    end
+
+    # Get values for x axis
+    x = collect(min_size:1:max_size)
+
+    # Extract data from performance data
+    loss_arr = collect(map(x->x["loss"], perf_data))
+    z_arr = collect(map(x->x["Z"], perf_data))
+
+    # Save data to csv
+    file = "gridsize.csv"
+    writedlm(file,  ["Average number of paths used",
+                    path_data, "Efficiency", loss_arr,
+                    "Z-dephasing", z_arr], ',')
+
+    # Plot
+    plot(x, collision_data, ylims=(0,1), linewidth=2, label=L"$P$",
+    legend=:bottomright)
+    plot!(x, loss_arr, linewidth=2, label=L"$\eta$")
+    plot!(x, z_arr, linewidth=2, label=L"$F$")
+    xaxis!(L"$\textrm{Grid Size}$")
+    savefig("cost_gridsize.png")
+    savefig("cost_gridsize.pdf")
+
+    plot(x, path_data, linewidth=2, legend=false)
+    xaxis!(L"$\textrm{Grid Size}$")
+    yaxis!(L"$\textrm{Average Number of Paths Used Per User Pair}$")
+    savefig("path_gridsize.png")
+    savefig("path_gridsize.pdf")
+end
+
+"""
+For a given grid size, this function calculates the average manhattan distance
+between two random points, then (assuming the channels have unit cost) returns
+the average efficiency and fidelity
+"""
+function analytic_single_user_single_path_cost(gridsize::Int64)
+    man_dist = 2/3*(gridsize - 1)
+    e = dB_to_P(man_dist)
+    f = dB_to_Z(man_dist)
+    return(e, f)
+end
+
+
+"""
+For a given grid size, this function runs the greedy_multi_path routing algorithm
+on randomly placed end-user pairs.
+"""
+function numerical_single_user_multi_path_cost(gridsize::Int64)
+    N = 10000
+    G = GridNetwork(gridsize, gridsize)
+    pfmnce_data, dummy = net_performance(G, N, 1)
+    return pfmnce_data["loss"], pfmnce_data["Z"]
+end
+
+
 
 # CODE TO GENERATE STATIC PLOT. LOOKS GOOD!
 # net = GridNetwork(10,10)
@@ -355,6 +449,16 @@ end
 
 # MAIN
 # plot_with_userpairs(40, 100000)
-# println("Beginning plot_with_percolations")
 # plot_with_percolations((0.0, 0.01, 0.7), 100000)
-plot_with_timedepth(1, 20)
+plot_with_timedepth(100, 30)
+
+# num_trials::Int64, num_pairs::Int64, min_size::Int64, max_size::Int64
+# plot_with_gridsize(1000, 40, 10, 20)
+
+# Analytics
+# e, f = analytic_single_user_single_path_cost(10)
+# println(e)
+# println(f)
+
+# Numericals
+# numerical_single_user_multi_path_cost(10)
