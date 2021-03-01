@@ -119,8 +119,7 @@ function remove_shortest_path!(tempnet::QuNet.TemporalGraph, cost::String,
 end
 
 
-# TODO: Remove cost variable, and replace "cost" with "Z". There's no reason
-# To find the shortest path in terms of loss. It should be "Z"
+
 """
 greedy_multi_path! is an entanglement routing strategy for a quantum network
 with n end user pairs.
@@ -232,4 +231,44 @@ function greedy_multi_path!(tempnet::QuNet.TemporalGraph, purification_method,
         end
     end
     return pur_paths, collisions
+end
+
+
+"""
+greedy_multi_pathset! is an entanglement routing strategy for a quantum network
+with n end user pairs. It is identical to greedy_multi_path!, the only difference
+being that this function returns the set of userpaths. (i.e. the list of paths selected
+for each end-user pair) Refer to greedy_multi_path! documentation for more info.
+"""
+function greedy_multi_pathset!(tempnet::QuNet.TemporalGraph, purification_method,
+    users, maxpaths::Int64=3)
+
+    path_set = [Vector() for i in 1:length(users)]
+
+    for i in 1:maxpaths
+
+        for (userid, user) in enumerate(users)
+            src = user[1]
+            dst = user[2]
+
+            # Get the shortest path (In terms of dephasing)
+            path = shortest_path(tempnet.graph["Z"], src, dst)
+
+            # Hard remove the path from the graph
+            for edge in path
+                status = hard_rem_edge!(tempnet.graph["Z"], edge.src, edge.dst)
+                if status == false
+                    error("Failed to remove edge in path")
+                end
+            end
+
+            # If pathcv is nothing, no path was found.
+            if path == nothing
+                break
+            else
+                push!(path_set[userid], path)
+            end
+        end
+    end
+    return path_set
 end

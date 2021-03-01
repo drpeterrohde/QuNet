@@ -1,48 +1,4 @@
 """
-Takes a network as input and return statistics for the graph tested against
-many instances of the greedy_multi_path! routing algorithm for some number of
-random user pairs
-"""
-function net_performance(network::QNetwork, num_trials::Int64, num_pairs::Int64,
-    with_err::Bool=false)
-
-    total_collisions = 0
-    pfmnce_data = []
-
-    for i in 1:num_trials
-        net = deepcopy(network)
-        refresh_graph!(net)
-
-        # Generate random communication pairs
-        user_pairs = make_user_pairs(network, num_pairs)
-        # net_data is a c
-        net_data, collisions = QuNet.greedy_multi_path!(net, purify, "loss", user_pairs)
-        total_collisions += collisions
-
-        # If net_data contains nothing,
-        filter!(x->x!=nothing, net_data)
-
-        # Mean well defined only if data set > 0
-        if length(net_data) > 0
-            # Average the data
-            ave = dict_average(net_data)
-            push!(pfmnce_data, ave)
-        end
-    end
-
-    if with_err == true
-        # Standard error well defined only if sample size greater than 1
-        pfmnce_err = dict_err(pfmnce_data)
-        pfmnce_data = dict_average(pfmnce_data)
-        return pfmnce_data, pfmnce_err, total_collisions
-    end
-
-    pfmnce_data = dict_average(pfmnce_data)
-    return pfmnce_data, total_collisions
-end
-
-
-"""
 Return average average value for an array of cost vectors.
 If the length of the input is less than 1, mean is not well defined,
 the key values returned are 'nothing'.
@@ -82,7 +38,7 @@ function dict_err(dict_list)
 
     for cost_type in keys(averr)
         costs = collect(map(x->x[cost_type], dict_list))
-        averr[cost_type] = std(costs) / sqrt(len - 1)
+        averr[cost_type] = std(costs)/(sqrt(length(costs)))
     end
     return averr
 end
@@ -109,95 +65,90 @@ function make_user_pairs(QNetwork, num_pairs)
     return pairs
 end
 
-# TODO: Move to Plot.jl?
+
 """
-Plot the performance data of greedy_path for some number of trials
-    vs the number of end user pairs
+Takes a network as input and return greedy_multi_path! performance statistics for some number of
+random user pairs.
 """
-function plot_with_userpairs(max_pairs::Int64,
-    num_trials::Int64)
+function net_performance(network::QNetwork, num_trials::Int64, num_pairs::Int64,
+    with_err::Bool=false; max_paths=3)
 
-    perf_data = []
-    collision_data = []
+    total_collisions = 0
+    pfmnce_data = []
+    path_data = []
 
-    for i in 1:max_pairs
-        println("Collecting for pairsize: $i")
-        # Generate 10x10 graph:
-        net = GridNetwork(10, 10)
+    for i in 1:num_trials
+        net = deepcopy(network)
 
-        # Collect performance statistics
-        performance, collisions = net_performance(net, num_trials, i)
-        collision_rate = collisions/(num_trials*i)
-        push!(collision_data, collision_rate)
-        push!(perf_data, performance)
+        # No need to refresh graph here. GridNetwork is already ready to go
+        #refresh_graph!(net)
+
+        # Generate random communication pairs
+        user_pairs = make_user_pairs(network, num_pairs)
+        # NOTE Added max_paths here. Check me first if something goes wrong.
+        net_data, collisions, ave_paths_used = QuNet.greedy_multi_path!(net, purify, user_pairs, max_paths)
+        total_collisions += collisions
+        push!(path_data, ave_paths_used)
+
+        # If net_data contains nothing,
+        filter!(x->x!=nothing, net_data)
+
+        # Mean well defined only if data set > 0
+        if length(net_data) > 0
+            # Average the data
+            ave = dict_average(net_data)
+            push!(pfmnce_data, ave)
+        end
     end
 
-    # Get values for x axis
-    x = collect(1:max_pairs)
+    if with_err == true
+        # Performance data and error
+        pfmnce_err = dict_err(pfmnce_data)
+        pfmnce_data = dict_average(pfmnce_data)
+        # Path data and error
+        path_err = std(path_data)
+        path_data = mean(path_data)
+        return pfmnce_data, pfmnce_err, total_collisions, path_data, path_err
+    end
 
-    # Extract data from performance data
-    loss_arr = collect(map(x->x["loss"], perf_data))
-    z_arr = collect(map(x->x["Z"], perf_data))
-
-    # Plot
-    plot(x, collision_data, ylims=(0,1), linewidth=2, label=L"$P_s$",
-    legend=:bottomright)
-    plot!(x, loss_arr, linewidth=2, label=L"$\eta$")
-    plot!(x, z_arr, linewidth=2, label=L"$F$")
-    xaxis!(L"$\textrm{Number of End User Pairs}$")
+    # Average path_data
+    path_data = mean(path_data)
+    pfmnce_data = dict_average(pfmnce_data)
+    return pfmnce_data, total_collisions, path_data
 end
 
 
-# TODO: Move to Plot.jl?
-function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, num_trials::Int64)
+function net_performance(tempgraph::QuNet.TemporalGraph, num_trials::Int64,
+    user_pairs::Vector{Tuple}, with_err::Bool=false)
 
-    # Network to be percolated.
-    size = 10
-    net = GridNetwork(size, size)
+    total_collisions = 0
+    pfmnce_data = []
 
-    perf_data = []
-    err_data = []
-    collision_data = []
+    for i in 1:num_trials
+        # Copying network seems like it converts it to QNetwork? Test this
+        net = deepcopy(tempgraph)
 
-    for p in perc_range[1]:perc_range[2]:perc_range[3]
-        println("Collecting for percolation rate: $p")
+        net_data, collisions = QuNet.greedy_multi_path!(net, purify, user_pairs)
+        total_collisions += collisions
 
-        # Percolate the network
-        perc_net = QuNet.percolate_edges(net, p)
-        refresh_graph!(perc_net)
+        # If net_data contains nothing,
+        filter!(x->x!=nothing, net_data)
 
-        # Collect performance data (with variance) and collision count
-        num_pairs = 10
-
-        #performance, errors, collisions
-        performance, errors, collisions = net_performance(perc_net, num_trials, num_pairs, true)
-
-        # Normalise collisions
-        collision_rate = collisions/(num_trials*num_pairs)
-
-        push!(perf_data, performance)
-        push!(err_data, errors)
-        push!(collision_data, collision_rate)
+        # Mean well defined only if data set > 0
+        if length(net_data) > 0
+            # Average the data
+            ave = dict_average(net_data)
+            push!(pfmnce_data, ave)
+        end
     end
 
-    # Get values for x axis
-    x = collect(perc_range[1]:perc_range[2]:perc_range[3])
+    if with_err == true
+        # Standard error well defined only if sample size greater than 1
+        pfmnce_err = dict_err(pfmnce_data)
+        pfmnce_data = dict_average(pfmnce_data)
+        return pfmnce_data, pfmnce_err, total_collisions
+    end
 
-    # Extract data from performance data
-    loss_arr = collect(map(x->x["loss"], perf_data))
-    z_arr = collect(map(x->x["Z"], perf_data))
-
-    # Extract error data
-    loss_error = collect(map(x->x["loss"], err_data))
-    z_error = collect(map(x->x["Z"], err_data))
-
-    loss_arr = replace(loss_arr, nothing=>NaN)
-    z_arr = replace(z_arr, nothing=>NaN)
-
-    # Plot
-    plot(x, collision_data, ylims=(0,1), linewidth=2, label=L"$P$",
-    legend=:bottomright)
-    plot!(x, loss_arr, seriestype = :scatter, yerror = loss_error, label=L"$\eta$")
-    plot!(x, z_arr, seriestype = :scatter, yerror = z_error, label=L"$F$")
-    #xaxis!(L"$\textrm{Number of End User Pairs}$")
+    pfmnce_data = dict_average(pfmnce_data)
+    return pfmnce_data, total_collisions
 end

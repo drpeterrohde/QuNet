@@ -1,3 +1,8 @@
+"""
+This file contains all the scripts used to produce the plots for the QuNet paper.
+(Except for the Satellite plot which is in SatPlotDemo.jl)
+"""
+
 using QuNet
 using LightGraphs, SimpleWeightedGraphs, GraphPlot, MetaGraphs, Plots, Colors, Statistics
 using LaTeXStrings
@@ -70,13 +75,13 @@ function make_user_pairs(QNetwork, num_pairs)
     return pairs
 end
 
+
 """
-Takes a network as input and return statistics for the graph tested against
-many instances of the greedy_multi_path! routing algorithm for some number of
-random user pairs
+Takes a network as input and return greedy_multi_path! performance statistics for some number of
+random user pairs.
 """
 function net_performance(network::QNetwork, num_trials::Int64, num_pairs::Int64,
-    with_err::Bool=false)
+    with_err::Bool=false; max_paths=3)
 
     total_collisions = 0
     pfmnce_data = []
@@ -90,8 +95,8 @@ function net_performance(network::QNetwork, num_trials::Int64, num_pairs::Int64,
 
         # Generate random communication pairs
         user_pairs = make_user_pairs(network, num_pairs)
-        # net_data is a c
-        net_data, collisions, ave_paths_used = QuNet.greedy_multi_path!(net, purify, user_pairs)
+        # NOTE Added max_paths here. Check me first if something goes wrong.
+        net_data, collisions, ave_paths_used = QuNet.greedy_multi_path!(net, purify, user_pairs, max_paths)
         total_collisions += collisions
         push!(path_data, ave_paths_used)
 
@@ -160,8 +165,7 @@ end
 
 
 """
-Plot the performance data of greedy_path for some number of trials
-    vs the number of end user pairs
+Plot the performance statistics of greedy-multi-path vs the number of end-user pairs
 """
 function plot_with_userpairs(max_pairs::Int64,
     num_trials::Int64)
@@ -213,6 +217,10 @@ function plot_with_userpairs(max_pairs::Int64,
 end
 
 
+"""
+Plot the performance statistics of greedy-multi-path with respect to edge percolation
+rate (The probability that a given edge is removed)
+"""
 function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, num_trials::Int64)
 
     # Network to be percolated.
@@ -272,8 +280,6 @@ function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, nu
                     "Z Error", z_error], ',')
 
     # Plot
-    #plot(x, collision_data, ylims=(0,1), linewidth=2, label=L"$P$",
-    #legend=:bottomright)
     plot(x, loss_arr, ylims=(0,1), seriestype = :scatter, yerror = loss_error, label=L"$\eta$",
     legend=:bottomright)
     plot!(x, z_arr, seriestype = :scatter, yerror = z_error, label=L"$F$")
@@ -290,7 +296,8 @@ end
 
 
 """
-Plot the collisions of a grid lattice
+Plot the performance statistics of greedy-multi-path with respect to the timedepth
+of the graph
 """
 function plot_with_timedepth(num_trials::Int64, max_depth::Int64)
 
@@ -363,6 +370,9 @@ function plot_with_timedepth(num_trials::Int64, max_depth::Int64)
 end
 
 
+"""
+Plot performance statistics of greedy-multi-path with respect to grid size of the network
+"""
 function plot_with_gridsize(num_trials::Int64, num_pairs::Int64, min_size::Int64, max_size::Int64)
     @assert min_size < max_size
     @assert num_pairs*2 <= min_size^2 "Graph size too small for num_pairs"
@@ -439,26 +449,98 @@ function numerical_single_user_multi_path_cost(gridsize::Int64)
 end
 
 
+"""
+Plot the performance statistics of greedy_multi_path for 1 random end-user pair
+over a range of graph sizes and for different numbers of max_path (1,2,3) (ie. the
+maximum number of paths that can be purified by a given end-user pair.)
+"""
+function plot_maxpaths_with_gridsize(num_trials::Int64, min_size::Int64, max_size::Int64)
+    @assert min_size < max_size
+    @assert num_pairs*2 <= min_size^2 "Graph size too small for num_pairs"
 
-# CODE TO GENERATE STATIC PLOT. LOOKS GOOD!
-# net = GridNetwork(10,10)
-# temp = QuNet.TemporalGraph(net,1)
-# g = deepcopy(temp.graph["loss"])
-# user_paths = QuNet.greedy_multi_path!(g, [(20,50),(55,90),(1,15)], maxpaths=3)
-# QuNet.plot_network(g, user_paths, temp.locs_x, temp.locs_y)
+    perf_data1 = []
+    perf_data2 = []
+    perf_data3 = []
+
+    size_list = collect(min_size:1:max_size)
+    for (j, data_array) in enumerate([perf_data1, perf_data2, perf_data3])
+        println("Collecting for max_paths: $j")
+        for i in size_list
+            println("Collecting for gridsize: $i")
+            # Generate ixi graph:
+            net = GridNetwork(i, i)
+
+            # Collect performance statistics
+            performance, dummy, dummier = net_performance(net, num_trials, 1, max_paths=j)
+            push!(data_array, performance)
+        end
+    end
+
+    # Get values for x axis
+    x = collect(min_size:1:max_size)
+
+    # Extract data from performance data
+    loss_arr1 = collect(map(x->x["loss"], perf_data1))
+    z_arr1 = collect(map(x->x["Z"], perf_data1))
+    loss_arr2 = collect(map(x->x["loss"], perf_data2))
+    z_arr2 = collect(map(x->x["Z"], perf_data2))
+    loss_arr3 = collect(map(x->x["loss"], perf_data3))
+    z_arr3 = collect(map(x->x["Z"], perf_data3))
+
+    # Plot
+    plot(x, loss_arr1, linewidth=2, label=L"$\eta_1$", color = :red, legend=:right)
+    plot!(x, z_arr1, linewidth=2, label=L"$F_1$", linestyle=:dash, color =:red)
+    plot!(x, loss_arr2, linewidth=2, label=L"$\eta_2$", color =:blue)
+    plot!(x, z_arr2, linewidth=2, label=L"$F_2$", linestyle=:dash, color =:blue)
+    plot!(x, loss_arr3, linewidth=2, label=L"$\eta_3$", color =:green)
+    plot!(x, z_arr3, linewidth=2, label=L"$F_3$", linestyle=:dash, color =:green)
+
+    xaxis!(L"$\textrm{Grid Size}$")
+    savefig("cost_maxpaths.png")
+    savefig("cost_maxpaths.pdf")
+end
+
+"""
+Draw a network with timedepth 1 and the greedy-paths chosen between 3 end user pairs.
+"""
+function generate_static_plot()
+    net = GridNetwork(10,10)
+    temp = QuNet.TemporalGraph(net, 1)
+    # g = deepcopy(temp.graph["loss"])
+    user_paths = QuNet.greedy_multi_pathset!(temp, QuNet.purify, [(20,91),(55,90),(1,99)])
+    temp = QuNet.TemporalGraph(net, 1)
+    QuNet.plot_network(temp.graph["Z"], user_paths, temp.locs_x, temp.locs_y)
+end
 
 # MAIN
+"""
+Uncomment functions to reproduce plots from the paper / create your own
+
+Note: Reproducing plots with the default parameters (those used in the paper)
+will take between 2 to 12 hours each. Reader beware!
+"""
+# Usage : (max_pairs::Int64, num_trials::Int64)
 # plot_with_userpairs(40, 100000)
+
+# Usage : (perc_range::Tuple{Float64, Float64, Float64}, num_trials::Int64)
 # plot_with_percolations((0.0, 0.01, 0.7), 100000)
-plot_with_timedepth(100, 30)
 
-# num_trials::Int64, num_pairs::Int64, min_size::Int64, max_size::Int64
-# plot_with_gridsize(1000, 40, 10, 20)
+# Usage : (num_trials::Int64, max_depth::Int64)
+# plot_with_timedepth(100, 30)
 
-# Analytics
+# Usage : (num_trials::Int64, num_pairs::Int64, min_size::Int64, max_size::Int64)
+# plot_with_gridsize(100, 40, 10, 150)
+
+# Usage : (num_trials::Int64, num_pairs::Int64, min_size::Int64, max_size::Int64)
+# plot_maxpaths_with_gridsize(10000, 10, 30)
+
+# Usage : None
+# generate_static_plot()
+
+# Analytic Calculations
 # e, f = analytic_single_user_single_path_cost(10)
 # println(e)
 # println(f)
 
-# Numericals
+# Numerical Calculations
 # numerical_single_user_multi_path_cost(10)
