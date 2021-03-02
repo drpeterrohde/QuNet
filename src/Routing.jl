@@ -118,8 +118,6 @@ function remove_shortest_path!(tempnet::QuNet.TemporalGraph, cost::String,
     return path_costs
 end
 
-
-
 """
 greedy_multi_path! is an entanglement routing strategy for a quantum network
 with n end user pairs.

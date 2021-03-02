@@ -9,162 +9,6 @@ using LaTeXStrings
 using DelimitedFiles
 
 """
-Return average average value for an array of cost vectors.
-If the length of the input is less than 1, mean is not well defined,
-the key values returned are 'nothing'.
-"""
-function dict_average(dict_list)
-    avcosts = zero_costvector()
-
-    if length(dict_list) == 0
-        for cost_type in keys(avcosts)
-            avcosts[cost_type] = NaN
-        end
-        return avcosts
-    end
-
-    for cost_type in keys(avcosts)
-        costs = collect(map(x->x[cost_type], dict_list))
-        avcosts[cost_type] = mean(costs)
-    end
-    return avcosts
-end
-
-"""
-Return average standard error for an array of cost vectors.
-If the length of the input is less than 2, error is not well defined,
-the key values returned are 'nothing'.
-"""
-function dict_err(dict_list)
-    averr = zero_costvector()
-    len = length(dict_list)
-
-    if len < 2
-        for cost_type in keys(averr)
-            averr[cost_type] = NaN
-        end
-        return averr
-    end
-
-    for cost_type in keys(averr)
-        costs = collect(map(x->x[cost_type], dict_list))
-        averr[cost_type] = std(costs)/(sqrt(length(costs)))
-    end
-    return averr
-end
-
-
-"""Generate a list of user_pairs for a QNetwork"""
-function make_user_pairs(QNetwork, num_pairs)
-    num_nodes = length(QNetwork.nodes)
-    @assert num_nodes >= num_pairs*2 "Graph space too small for number of pairs"
-    rand_space = Array(collect(1:num_nodes))
-    pairs = Vector{Tuple}()
-    i = 0
-    while i < num_pairs
-        idx = rand(1:length(rand_space))
-        u = rand_space[idx]
-        deleteat!(rand_space, idx)
-        idx = rand(1:length(rand_space))
-        v = rand_space[idx]
-        deleteat!(rand_space, idx)
-        chosen_pair = (u, v)
-        push!(pairs, chosen_pair)
-        i += 1
-    end
-    return pairs
-end
-
-
-"""
-Takes a network as input and return greedy_multi_path! performance statistics for some number of
-random user pairs.
-"""
-function net_performance(network::QNetwork, num_trials::Int64, num_pairs::Int64,
-    with_err::Bool=false; max_paths=3)
-
-    total_collisions = 0
-    pfmnce_data = []
-    path_data = []
-
-    for i in 1:num_trials
-        net = deepcopy(network)
-
-        # No need to refresh graph here. GridNetwork is already ready to go
-        #refresh_graph!(net)
-
-        # Generate random communication pairs
-        user_pairs = make_user_pairs(network, num_pairs)
-        # NOTE Added max_paths here. Check me first if something goes wrong.
-        net_data, collisions, ave_paths_used = QuNet.greedy_multi_path!(net, purify, user_pairs, max_paths)
-        total_collisions += collisions
-        push!(path_data, ave_paths_used)
-
-        # If net_data contains nothing,
-        filter!(x->x!=nothing, net_data)
-
-        # Mean well defined only if data set > 0
-        if length(net_data) > 0
-            # Average the data
-            ave = dict_average(net_data)
-            push!(pfmnce_data, ave)
-        end
-    end
-
-    if with_err == true
-        # Performance data and error
-        pfmnce_err = dict_err(pfmnce_data)
-        pfmnce_data = dict_average(pfmnce_data)
-        # Path data and error
-        path_err = std(path_data)
-        path_data = mean(path_data)
-        return pfmnce_data, pfmnce_err, total_collisions, path_data, path_err
-    end
-
-    # Average path_data
-    path_data = mean(path_data)
-    pfmnce_data = dict_average(pfmnce_data)
-    return pfmnce_data, total_collisions, path_data
-end
-
-
-function net_performance(tempgraph::QuNet.TemporalGraph, num_trials::Int64,
-    user_pairs::Vector{Tuple}, with_err::Bool=false)
-
-    total_collisions = 0
-    pfmnce_data = []
-
-    for i in 1:num_trials
-        # Copying network seems like it converts it to QNetwork? Test this
-        net = deepcopy(tempgraph)
-
-        net_data, collisions = QuNet.greedy_multi_path!(net, purify, user_pairs)
-        total_collisions += collisions
-
-        # If net_data contains nothing,
-        filter!(x->x!=nothing, net_data)
-
-        # Mean well defined only if data set > 0
-        if length(net_data) > 0
-            # Average the data
-            ave = dict_average(net_data)
-            push!(pfmnce_data, ave)
-        end
-    end
-
-    if with_err == true
-        # Standard error well defined only if sample size greater than 1
-        pfmnce_err = dict_err(pfmnce_data)
-        pfmnce_data = dict_average(pfmnce_data)
-        return pfmnce_data, pfmnce_err, total_collisions
-    end
-
-    pfmnce_data = dict_average(pfmnce_data)
-    return pfmnce_data, total_collisions
-end
-
-
-"""
 Plot the performance statistics of greedy-multi-path vs the number of end-user pairs
 """
 function plot_with_userpairs(max_pairs::Int64,
@@ -430,7 +274,7 @@ between two random points, then (assuming the channels have unit cost) returns
 the average efficiency and fidelity
 """
 function analytic_single_user_single_path_cost(gridsize::Int64)
-    man_dist = 2/3*(gridsize - 1)
+    man_dist = 2/3*(gridsize + 1)
     e = dB_to_P(man_dist)
     f = dB_to_Z(man_dist)
     return(e, f)
@@ -505,11 +349,84 @@ Draw a network with timedepth 1 and the greedy-paths chosen between 3 end user p
 """
 function generate_static_plot()
     net = GridNetwork(10,10)
-    temp = QuNet.TemporalGraph(net, 1)
+    temp = QuNet.TemporalGraph(net, 3)
     # g = deepcopy(temp.graph["loss"])
-    user_paths = QuNet.greedy_multi_pathset!(temp, QuNet.purify, [(20,91),(55,90),(1,99)])
-    temp = QuNet.TemporalGraph(net, 1)
+    user_paths = QuNet.greedy_multi_pathset!(temp, QuNet.purify, [(1,10),(1,50),(1,99)])
+    temp = QuNet.TemporalGraph(net, 3)
     QuNet.plot_network(temp.graph["Z"], user_paths, temp.locs_x, temp.locs_y)
+    # QuNet.plot_network(temp, user_paths)
+end
+
+
+"""
+As suggested by Nathan:
+
+This plot is essentially identical to the plot_with_timedepth, except that no
+multi-path routing is allowed. As expected, the costs do not vary with timedepth,
+and seem to be in agreement with average L1 costs.
+"""
+function plot_nomultipath_with_timedepth(num_trials::Int64, max_depth::Int64)
+
+    num_pairs = 40
+    grid_size = 10
+
+    perf_data = []
+    err_data = []
+    collision_data = []
+
+    for i in 1:max_depth
+        println("Collecting for time depth $i")
+        G = GridNetwork(grid_size, grid_size)
+        T = QuNet.TemporalGraph(G, i)
+        QuNet.add_async_nodes!(T)
+        # Get random pairs from G.
+        user_pairs = make_user_pairs(G, num_pairs)
+
+        performance, errors, collisions = net_performance(T, num_trials, user_pairs, true, max_paths=1)
+        collision_rate = collisions/(num_trials*num_pairs)
+        push!(collision_data, collision_rate)
+        push!(perf_data, performance)
+        push!(err_data, errors)
+    end
+
+    # Collect data for horizontal lines:
+    # single-user-single-path
+    susp = analytic_single_user_single_path_cost(grid_size)
+    e_susp = ones(length(1:max_depth)) * susp[1]
+    f_susp = ones(length(1:max_depth)) * susp[2]
+
+    # Get values for x axis
+    x = collect(1:max_depth)
+
+    # Extract data from performance data
+    loss_arr = collect(map(x->x["loss"], perf_data))
+    z_arr = collect(map(x->x["Z"], perf_data))
+
+    # Extract error data
+    loss_error = collect(map(x->x["loss"], err_data))
+    z_error = collect(map(x->x["Z"], err_data))
+
+    # Plot
+    plot(x, collision_data, seriestype = :scatter, marker = (5), ylims=(0,1), linewidth=2, label=L"$P$",
+    legend=:topright)
+    plot!(x, loss_arr, seriestype = :scatter, marker = (5), yerror = loss_error, label=L"$\eta$")
+    plot!(x, z_arr, seriestype = :scatter, marker = (5), yerror = z_error, label=L"$F$")
+
+    # Plot horizontal lines
+    plot!(x, e_susp, linestyle=:dash, color=:red, label=L"$\textrm{Average path } \eta$")
+    plot!(x, f_susp, linestyle=:dash, color=:green, label=L"$\textrm{Average path } F$")
+
+    # DEBUG
+    # Plot Peter's line
+    # n = 10
+    # peternum = 2n*(n^2-1)/(3*(2n^2-1))
+    # e_peter = ones(length(1:max_depth)) * dB_to_P(peternum)
+    # plot!(x, e_susp, linestyle=:dash, label=L"$\textrm{Peter's correction}$")
+
+
+    xaxis!(L"$\textrm{Time Depth of Temporal Meta-Graph}$")
+    savefig("nomultipath.pdf")
+    savefig("nomultipath.png")
 end
 
 # MAIN
@@ -536,6 +453,9 @@ will take between 2 to 12 hours each. Reader beware!
 
 # Usage : None
 # generate_static_plot()
+
+# Usage: (num_trials::Int64, max_depth::Int64)
+# plot_nomultipath_with_timedepth(10, 10)
 
 # Analytic Calculations
 # e, f = analytic_single_user_single_path_cost(10)

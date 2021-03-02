@@ -38,7 +38,7 @@ export
 QObject, QNode, QChannel,
 
 # Benchmarking.jl
-percolation_bench,
+percolation_bench, dict_average, dict_err, make_user_pairs, net_performance,
 
 # Channel.jl
 BasicChannel, AirChannel,

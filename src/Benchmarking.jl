@@ -119,7 +119,7 @@ end
 
 
 function net_performance(tempgraph::QuNet.TemporalGraph, num_trials::Int64,
-    user_pairs::Vector{Tuple}, with_err::Bool=false)
+    user_pairs::Vector{Tuple}, with_err::Bool=false; max_paths=3)
 
     total_collisions = 0
     pfmnce_data = []
@@ -128,7 +128,7 @@ function net_performance(tempgraph::QuNet.TemporalGraph, num_trials::Int64,
         # Copying network seems like it converts it to QNetwork? Test this
         net = deepcopy(tempgraph)
 
-        net_data, collisions = QuNet.greedy_multi_path!(net, purify, user_pairs)
+        net_data, collisions = QuNet.greedy_multi_path!(net, purify, user_pairs, max_paths)
         total_collisions += collisions
 
         # If net_data contains nothing,
