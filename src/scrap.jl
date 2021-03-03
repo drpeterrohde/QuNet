@@ -1,3 +1,4 @@
+# Taken from MultiPathDemo.jl
 """
 Return average average value for an array of cost vectors.
 If the length of the input is less than 1, mean is not well defined,
@@ -42,7 +43,6 @@ function dict_err(dict_list)
     end
     return averr
 end
-
 
 """Generate a list of user_pairs for a QNetwork"""
 function make_user_pairs(QNetwork, num_pairs)
@@ -119,7 +119,7 @@ end
 
 
 function net_performance(tempgraph::QuNet.TemporalGraph, num_trials::Int64,
-    user_pairs::Vector{Tuple}, with_err::Bool=false; max_paths=3)
+    user_pairs::Vector{Tuple}, with_err::Bool=false)
 
     total_collisions = 0
     pfmnce_data = []
@@ -128,7 +128,7 @@ function net_performance(tempgraph::QuNet.TemporalGraph, num_trials::Int64,
         # Copying network seems like it converts it to QNetwork? Test this
         net = deepcopy(tempgraph)
 
-        net_data, collisions = QuNet.greedy_multi_path!(net, purify, user_pairs, max_paths)
+        net_data, collisions = QuNet.greedy_multi_path!(net, purify, user_pairs)
         total_collisions += collisions
 
         # If net_data contains nothing,

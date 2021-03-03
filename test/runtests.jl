@@ -207,6 +207,13 @@ end
     @test(has_path(Q.graph["loss"], 1, 2) == false)
     @test(removed_path_cost == Dict("Z"=>0.5, "loss"=>1.0))
 
+    # Test: remove_shortest_path! for a TemporalGraph
+    G = GridNetwork(2, 2)
+    T = QuNet.TemporalGraph(G, 2)
+    QuNet.add_async_nodes!(T)
+    removed_path_cost = QuNet.remove_shortest_path!(T, "loss", 1, 2)
+    @test has_edge(T.graph["loss"], 1, 2) == false
+
     # Test 5: new_greedy_multi_path
     Q = QNetwork()
     A = BasicNode("A")
@@ -226,7 +233,7 @@ end
     refresh_graph!(Q)
 
     result, collisions = QuNet.greedy_multi_path!(Q, purify, "loss", [(1, 2)])
-    @test result[1]["loss"] == 4.245951332274958
+    @test result[1]["loss"] == 0.37618793838911524
 
     # Test 6: that greedy_multi_path handles collisions when no edges exist
     Q = QNetwork()
@@ -243,14 +250,37 @@ end
     ss = deepcopy(small_square)
     result, collisions = QuNet.greedy_multi_path!(ss, purify, "loss",
     [(1,2), (3,4)])
-    println(result)
+    # println(result)
     @test collisions == 0
 
     # Test 8: that greedy_multi_path! handles collisions when edges exist
     ss = deepcopy(small_square)
     result, collisions = QuNet.greedy_multi_path!(ss, purify, "loss",
     [(1,3), (2,4)])
-    println(result)
-    println(collisions)
+    # println(result)
+    # println(collisions)
     # TODO: Write some better tests here
+end
+
+@testset "TemporalGraphs.jl" begin
+    # Test 1: TemporalGraph initialises correctly
+    G = GridNetwork(2, 2)
+    T = QuNet.TemporalGraph(G, 2)
+    @test nv(T.graph["loss"]) == 8
+    @test T.nv == 4
+
+    # Test add_async_nodes!
+    QuNet.add_async_nodes!(T)
+    @test nv(T.graph["loss"]) == 12
+    @test T.nv == 4
+
+    # Test that edges are being added that connect async nodes to temporal ones
+    src = 1
+    src += T.nv * T.steps
+    @test T.graph["loss"].weights[src, 1] == 1.0e-9
+    @test T.graph["Z"].weights[5, src] == 2.0e-9
+
+    # Test rem_async_nodes!
+    QuNet.remove_async_nodes!(T)
+    @test nv(T.graph["loss"]) == 8
 end

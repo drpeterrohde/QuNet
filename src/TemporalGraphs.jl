@@ -56,9 +56,48 @@ function TemporalGraph(network::QNetwork, steps::Int64)::TemporalGraph
     end
 
     return temp_graph
-
     # fix up edge weights
 end
+
+function add_async_nodes!(tempnet::QuNet.TemporalGraph)
+    # Minimal weight constant
+    ϵ = 1e-9
+    N = tempnet.nv
+    steps = tempnet.steps
+    for costkey in keys(zero_costvector())
+        graph = tempnet.graph[costkey]
+        @assert nv(graph) == N * steps "Graph too small for number of steps given:
+        nv(graph) == $(nv(graph)) != N*steps == $(N*steps)"
+        # Add the asynchronus nodes
+        add_vertices!(graph, N)
+        # Keep track of indices of async nodes
+        async_idxs = collect(N*steps + 1: N*steps + N)
+        for t in 1:steps
+            # Connect each temporal node to its async counterpart
+            # Use minimal time dependent weight to prioritise top layers when routing
+            for i in 1:N
+                add_edge!(graph, i+N*(t-1), async_idxs[i], ϵ*t)
+                add_edge!(graph, async_idxs[i], i+N*(t-1), ϵ*t)
+            end
+        end
+    end
+end
+
+
+function remove_async_nodes!(tempnet::QuNet.TemporalGraph)
+    N = tempnet.nv
+    steps = tempnet.steps
+    for costkey in keys(zero_costvector())
+        graph = tempnet.graph[costkey]
+        @assert nv(graph) == N * steps + N
+        # Remove nodes with decreasing id so iteration works
+        kill_list = reverse(collect(N*steps+1:N*steps+N))
+        for i in kill_list
+            rem_vertex!(graph, i)
+        end
+    end
+end
+
 
 function gplot(temp_graph::TemporalGraph)
     gplot(temp_graph.graph["loss"], temp_graph.locs_x, temp_graph.locs_y, arrowlengthfrac=0.04)

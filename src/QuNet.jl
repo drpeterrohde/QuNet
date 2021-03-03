@@ -38,7 +38,7 @@ export
 QObject, QNode, QChannel,
 
 # Benchmarking.jl
-percolation_bench,
+percolation_bench, dict_average, dict_err, make_user_pairs, net_performance,
 
 # Channel.jl
 BasicChannel, AirChannel,
@@ -62,7 +62,7 @@ gplot,
 hard_rem_edge!,
 
 # Routing.jl
-shortest_path, greedy_multi_path!,
+shortest_path,
 
 # TemporalGraphs.jl
 
