@@ -10,10 +10,35 @@ mutable struct TemporalGraph
     TemporalGraph() = new(Dict{String,SimpleWeightedDiGraph}(), 0, 1, Vector{Float64}(), Vector{Float64}())
 end
 
-function TemporalGraph(network::QNetwork, steps::Int64)::TemporalGraph
+function TemporalGraph(network::QNetwork, steps::Int64; memory_prob::Float64=1.0,
+    memory_costs::Dict=Dict())::TemporalGraph
     temp_graph = TemporalGraph()
     temp_graph.nv = length(network.nodes)
     temp_graph.steps = steps
+
+    # Make a copy of the network so we don't change QNetwork structure.
+    netcopy = deepcopy(network)
+
+    if memory_prob != 1.0
+        @assert 0 <= memory_prob <= 1
+        # Iterate through nodes and randomly reassign memories according to memory_prob
+        # TODO: BAD PRACTICE. Don't manipulate QNetwork data.
+        for node in netcopy.nodes
+            if rand(Float64) <= memory_prob
+                node.has_memory = true
+            else
+                node.has_memory = false
+            end
+        end
+    end
+
+    # Keep tabs on which nodes have memories and what the the associated cost are
+    node_memories = Dict()
+    node_memory_costs = Dict()
+    for node in netcopy.nodes
+        node_memories[node.id] = node.has_memory
+        node_memory_costs[node.id] = node.memory_costs
+    end
 
     for cost_key in keys(zero_costvector())
         temp_graph.graph[cost_key] = SimpleWeightedDiGraph()
@@ -23,10 +48,10 @@ function TemporalGraph(network::QNetwork, steps::Int64)::TemporalGraph
             add_vertices!(temp_graph.graph[cost_key], temp_graph.nv)
 
             # Channels
-            for channel in network.channels
+            for channel in netcopy.channels
                 if channel.active == true
-                    src = findfirst(x -> x == channel.src, network.nodes) + (t-1)*temp_graph.nv
-                    dest = findfirst(x -> x == channel.dest, network.nodes) + (t-1)*temp_graph.nv
+                    src = findfirst(x -> x == channel.src, netcopy.nodes) + (t-1)*temp_graph.nv
+                    dest = findfirst(x -> x == channel.dest, netcopy.nodes) + (t-1)*temp_graph.nv
                     weight = channel.costs[cost_key]
                     add_edge!(temp_graph.graph[cost_key], src, dest, weight)
                     add_edge!(temp_graph.graph[cost_key], dest, src, weight)
@@ -37,18 +62,38 @@ function TemporalGraph(network::QNetwork, steps::Int64)::TemporalGraph
         # Memory channels
         for t in 1:(steps-1)
             for node in 1:temp_graph.nv
-                src = node + (t-1)*temp_graph.nv
-                dest = src + temp_graph.nv
-                add_edge!(temp_graph.graph[cost_key], src, dest, 1.0)
+                # Add temporal link if memory exists
+                if node_memories[node] == true
+                    # WARNING: Memory costs aren't dependent on the timestep size.
+                    # If the user specified a memory cost, use that.
+                    if length(memory_costs) != 0
+                        cost = memory_costs[cost_key]
+                    # Otherwise pull it from the node attribute
+                    else
+                        cv = node_memory_costs[node]
+                        cost = cv[cost_key]
+                    end
+                    # If the cost is zero, set it to epsilon so SimpleWeightedGraphs
+                    # add it to the sparse adj. matrix.
+                    if cost == 0
+                        cost = eps(Float64)
+                    end
+
+                    src = node + (t-1)*temp_graph.nv
+                    dest = src + temp_graph.nv
+                    add_edge!(temp_graph.graph[cost_key], src, dest, cost)
+                end
             end
         end
 
         # Coords
+
+        # Offset factor for temporal nodes
         offsetX = 0.1
         offsetY = 0.2
 
         for t in 1:steps
-            for node in network.nodes
+            for node in netcopy.nodes
                 push!(temp_graph.locs_x, node.location.x + (t-1) * offsetX)
                 push!(temp_graph.locs_y, node.location.y + (t-1) * offsetY)
             end
@@ -56,7 +101,6 @@ function TemporalGraph(network::QNetwork, steps::Int64)::TemporalGraph
     end
 
     return temp_graph
-    # fix up edge weights
 end
 
 function add_async_nodes!(tempnet::QuNet.TemporalGraph)

@@ -4,8 +4,9 @@ using Test
 using LightGraphs
 using SimpleWeightedGraphs
 
-include("ExampleNetworks.jl")
-include("small_square.jl")
+# Perhaps put these includes in the unit tests so I don't have to refresh.
+include("network-library/ExampleNetworks.jl")
+include("network-library/small_square.jl")
 
 @testset "Network.jl" begin
     # Test 1: QNetwork is correctly initialised
@@ -269,7 +270,26 @@ end
     @test nv(T.graph["loss"]) == 8
     @test T.nv == 4
 
+    # Test TemporalGraph attribute memory_prob works
+    G = GridNetwork(10, 10)
+    T = QuNet.TemporalGraph(G, 2, memory_prob=0.0)
+    @test ne(T.graph["Z"]) == 720
+
+    # Test TemporalGraph adds 100 more edges when memory_prob = 100%
+    T = QuNet.TemporalGraph(G, 2, memory_prob=1.0)
+    @test ne(T.graph["Z"]) == 820
+
+    # Test TemporalGraph with a default memory_cost, and check that temporal edges
+    # Have that cost.
+    T = QuNet.TemporalGraph(G, 2, memory_prob=1.0, memory_costs=Dict("Z"=>3, "loss"=>4))
+    graph = T.graph["Z"]
+    @test graph.weights[101, 1] == 3
+    graph = T.graph["loss"]
+    @test graph.weights[104, 4] == 4
+
     # Test add_async_nodes!
+    G = GridNetwork(2, 2)
+    T = QuNet.TemporalGraph(G, 2)
     QuNet.add_async_nodes!(T)
     @test nv(T.graph["loss"]) == 12
     @test T.nv == 4

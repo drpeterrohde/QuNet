@@ -418,16 +418,17 @@ function plot_nomultipath_with_timedepth(num_trials::Int64, max_depth::Int64)
 
     # DEBUG
     # Plot Peter's line
-    # n = 10
-    # peternum = 2n*(n^2-1)/(3*(2n^2-1))
-    # e_peter = ones(length(1:max_depth)) * dB_to_P(peternum)
-    # plot!(x, e_susp, linestyle=:dash, label=L"$\textrm{Peter's correction}$")
+    n = 10
+    peternum = 2n*(n^2-1)/(3*(2n^2-1))
+    e_peter = ones(length(1:max_depth)) * dB_to_P(peternum)
+    plot!(x, e_susp, linestyle=:dash, label=L"$\textrm{Peter's correction}$")
 
 
     xaxis!(L"$\textrm{Time Depth of Temporal Meta-Graph}$")
     savefig("nomultipath.pdf")
     savefig("nomultipath.png")
 end
+
 
 # MAIN
 """
