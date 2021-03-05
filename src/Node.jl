@@ -74,6 +74,9 @@ end
 
 Does nothing
 """
+function update(node::QNode)
+end
+
 function update(node::QNode, old_time::Float64, new_time::Float64)
 end
 

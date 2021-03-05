@@ -44,6 +44,13 @@ function print(network::QNetwork)
     println("channels: ", length(network.channels))
 end
 
+# NOTE Outdated refresh_graph! below.
+# We'll no longer use TemporalGraph structure to update graphs since it has
+# A lot more bells and whistles now. Good practice to have something custom built.
+# function refresh_graph!(network::QNetwork)
+#    network.graph = TemporalGraph(network, 1).graph
+# end
+
 """
     refresh_graph!(network::QNetwork)
 
@@ -52,7 +59,27 @@ graph for each associated cost), then updates the QNetwork.graph attribute
 with these new graphs.
 """
 function refresh_graph!(network::QNetwork)
-    network.graph = TemporalGraph(network, 1).graph
+
+    refreshed_graphs = Dict{String, SimpleWeightedDiGraph}()
+
+    for cost_key in keys(zero_costvector())
+        refreshed_graphs[cost_key] = SimpleWeightedDiGraph()
+
+        # Vertices
+        add_vertices!(refreshed_graphs[cost_key], length(network.nodes))
+
+        # Channels
+        for channel in network.channels
+            if channel.active == true
+                src = findfirst(x -> x == channel.src, network.nodes)
+                dest = findfirst(x -> x == channel.dest, network.nodes)
+                weight = channel.costs[cost_key]
+                add_edge!(refreshed_graphs[cost_key], src, dest, weight)
+                add_edge!(refreshed_graphs[cost_key], dest, src, weight)
+            end
+        end
+    end
+    network.graph = refreshed_graphs
 end
 
 """

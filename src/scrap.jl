@@ -1,3 +1,8 @@
+"""
+A file containing code that was recently rendered obsolete. Identical in function
+to a recycling bin.
+"""
+
 # Taken from MultiPathDemo.jl
 """
 Return average average value for an array of cost vectors.

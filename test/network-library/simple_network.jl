@@ -1,9 +1,4 @@
-# Test new_refresh_graph
-
-using QuNet
-
-# Make Graph
-Q = QNetwork()
+simple_net = QNetwork()
 A = BasicNode("A")
 C = BasicNode("C")
 B = BasicNode("B")
@@ -15,9 +10,5 @@ AC.costs = unit_costvector()
 CB.costs = unit_costvector()
 
 for i in [A, B, C, AB, AC, CB]
-    add(Q, i)
+    add(simple_net, i)
 end
-
-QuNet.new_refresh_graph!(Q)
-println(Q.graph["Z"])
-ne(Q.graph["Z"])

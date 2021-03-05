@@ -1,53 +1,57 @@
-# Are these declarations needed?
+"""
+Hudson's style-guide convention for testing:
+
++ Redundency is good.
++ Don't aim to be redundant, but don't aim for tight scripting either.
++ If you want to manipulate a network from the network-library, (I.E. refreshing,
+  adding temporal links, percolating etc.) do it on a copy.
++ One test set per file. Test every function in a given file thoroughly
++ Each test or subset of tests within the testset should begin with a comment
+  briefly explaining what it's testing. Ideally, the test should work completely independently
+  from other tests.
++ If you find something here that doesn't follow the style guide but it works regardless,
+  don't change it.
++ Redundency is good
+
+"""
+
 using QuNet
 using Test
 using LightGraphs
 using SimpleWeightedGraphs
 
 # Perhaps put these includes in the unit tests so I don't have to refresh.
-include("network-library/ExampleNetworks.jl")
+include("network-library/barbell.jl")
+include("network-library/simple_satnet.jl")
 include("network-library/small_square.jl")
 
 @testset "Network.jl" begin
-    # Test 1: QNetwork is correctly initialised
+    # Test: QNetwork is correctly initialised
     @test(typeof(barbell) == QNetwork)
 
-    # Test 2: Nodes are correctly added
+    # Test: Nodes are correctly added
     @test length(barbell.nodes) == 2
 
-    # Test 3: Channels are correctly added
+    # Test: Channels are correctly added
     @test length(barbell.channels) == 1
 
-    # Test 4: add_qnode with default node
-    # Q = QNetwork()
-    # QuNet.add_qnode!(Q, nodename="A")
-    # @test length(Q.nodes) == 1
-
-    # Test 5: add_qnode with satellite node
-    # QuNet.add_qnode!(Q, "S", PlanSatNode)
-    # @test typeof(Q.nodes[2]) == PlanSatNode
-
-    # Test 6: add_qchannel with AirChannel
-    # QuNet.add_channel!(Q, "A", "S", type=AirChannel)
-    # @test typeof(Q.channels[1]) == AirChannel
-
-    # Test 4: getnode works for id
+    # Test: getnode works for id
     newnode = QuNet.getnode(barbell, 1)
     @test newnode == barbell.nodes[1]
 
-    # Test 5: getnode works for name
+    # Test: getnode works for name
     newnode = QuNet.getnode(barbell, "A")
     @test newnode == barbell.nodes[1]
 
-    # Test 6: getchannel works for id
+    # Test: getchannel works for id
     newchannel = QuNet.getchannel(barbell, 1, 2)
     @test newchannel == barbell.channels[1]
 
-    # Test 7: getchannel works for string
+    # Test: getchannel works for string
     newerchannel = QuNet.getchannel(barbell, "A", "B")
     @test newerchannel == barbell.channels[1]
 
-    # Test 8: Update a sat network and check that the costs have changed
+    # Test: Update a sat network and check that the costs have changed
     AS = QuNet.getchannel(simple_satnet, "A", "S")
     old_costs = AS.costs
     update(simple_satnet)
@@ -56,26 +60,45 @@ include("network-library/small_square.jl")
         @test old_costs[key] != new_costs[key]
     end
 
-    # Test 9: Reset the network back to t=0 and check position goes back to init.
+    # Test: Reset the network back to t=0 and check position goes back to init.
     S = QuNet.getnode(simple_satnet, "S")
     update(simple_satnet, 0.0)
     @test S.location.x == 500
 
-    # Test 10 / 11: Check that deepcopy can clone network structure
-    C = deepcopy(barbell)
-    @test all(C.nodes[i] != barbell.nodes[i] for i in 1:length(C.nodes))
-    @test cmp(string(C), string(barbell)) == 0
+    # Test: Check that deepcopy can clone network structure
+    Q = deepcopy(barbell)
+    @test all(Q.nodes[i] != barbell.nodes[i] for i in 1:length(Q.nodes))
+    @test cmp(string(Q), string(barbell)) == 0
+
+    # Test: refresh_graph! creates SimpleWeightedGraph copies of Network for all costs
+    Q = deepcopy(barbell)
+    QuNet.refresh_graph!(Q)
+    @test length(Q.graph) == length(zero_costvector())
+    g = Q.graph["Z"]
+    @test nv(g) == 2
+    @test ne(g) == 2
+    @test g.weights[1, 2] == 0.5
+    @test g.weights[2, 1] == 0.5
+
+    # Test refresh_graph! on satellite network
+    Q = deepcopy(simple_satnet)
+    QuNet.refresh_graph!(Q)
+    g = Q.graph["loss"]
+    @test nv(g) == 3
+    @test ne(g) == 4
 
     # Test 12: Test that update works on copied graph
-    update(C)
-    @test cmp(string(C), string(barbell)) != 0
+    Q = deepcopy(barbell)
+    update(Q)
+    @test cmp(string(Q), string(barbell)) != 0
 
     # Test 13 / 14: Test that getchannel fetches the right channel in
     # a copied graph
+    Q = deepcopy(barbell)
     AB = QuNet.getchannel(barbell, "A", "B")
-    CAB = QuNet.getchannel(C, "A", "B")
-    @test (AB in barbell.channels) && (CAB in C.channels)
-    @test !(CAB in barbell.channels) && !(AB in C.channels)
+    CAB = QuNet.getchannel(Q, "A", "B")
+    @test (AB in barbell.channels) && (CAB in Q.channels)
+    @test !(CAB in barbell.channels) && !(AB in Q.channels)
 end
 
 
