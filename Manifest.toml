@@ -169,10 +169,10 @@ uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "4.3.1+4"
 
 [[FileIO]]
-deps = ["Pkg"]
-git-tree-sha1 = "83a417f955d8073feb8e7bc8900d6beb0c7b69c2"
+deps = ["Pkg", "Requires", "UUIDs"]
+git-tree-sha1 = "fca4d06b629ba6ded40bc6562db3dfa330959c11"
 uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-version = "1.5.0"
+version = "1.6.0"
 
 [[FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
@@ -227,9 +227,9 @@ version = "0.53.0+0"
 
 [[GeometryBasics]]
 deps = ["EarCut_jll", "IterTools", "LinearAlgebra", "StaticArrays", "StructArrays", "Tables"]
-git-tree-sha1 = "4d4f72691933d5b6ee1ff20e27a102c3ae99d123"
+git-tree-sha1 = "82853ebc70db4f5a3084853738c68fd497b22c7c"
 uuid = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
-version = "0.3.9"
+version = "0.3.10"
 
 [[Gettext_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "XML2_jll"]
@@ -363,15 +363,15 @@ uuid = "dd4b983a-f0e5-5f8d-a1b7-129d4a5fb1ac"
 version = "2.10.0+3"
 
 [[LaTeXStrings]]
-git-tree-sha1 = "c7aebfecb1a60d59c0fe023a68ec947a208b1e6b"
+git-tree-sha1 = "c7f1c695e06c01b95a67f0cd1d34994f3e7db104"
 uuid = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
-version = "1.2.0"
+version = "1.2.1"
 
 [[Latexify]]
 deps = ["Formatting", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdown", "Printf", "Requires"]
-git-tree-sha1 = "3a0084cec7bf157edcb45a67fac0647f88fe5eaf"
+git-tree-sha1 = "a2484a6e0a48c694c41f69397657b6753e218923"
 uuid = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
-version = "0.14.7"
+version = "0.14.9"
 
 [[LibGit2]]
 deps = ["Printf"]
@@ -664,9 +664,9 @@ version = "1.1.2"
 
 [[Revise]]
 deps = ["CodeTracking", "Distributed", "FileWatching", "JuliaInterpreter", "LibGit2", "LoweredCodeUtils", "OrderedCollections", "Pkg", "REPL", "Requires", "UUIDs", "Unicode"]
-git-tree-sha1 = "ce3af3784dce049c3f13980accbd9c2fb66953b0"
+git-tree-sha1 = "b72fa706920b1421d581525de9f4e442b95ba254"
 uuid = "295af30f-e4ad-537b-8983-00126c2a3abe"
-version = "3.1.13"
+version = "3.1.14"
 
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
