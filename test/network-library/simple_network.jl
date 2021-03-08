@@ -1,4 +1,4 @@
-simple_net = QNetwork()
+simple_network = QNetwork()
 A = BasicNode("A")
 C = BasicNode("C")
 B = BasicNode("B")
@@ -10,5 +10,7 @@ AC.costs = unit_costvector()
 CB.costs = unit_costvector()
 
 for i in [A, B, C, AB, AC, CB]
-    add(simple_net, i)
+    add(simple_network, i)
 end
+
+refresh_graph!(simple_network)

@@ -74,7 +74,7 @@ end
 function purify(paths::Vector{<:QChannel}, return_as_dB::Bool=true)
     cost_vectors = Vector{Dict}()
     for path in paths
-        cost = get_pathcost(path)
+        cost = get_pathcv(path)
         push!(cost_vectors, cost)
     end
     purify(cost_vectors, return_as_dB)

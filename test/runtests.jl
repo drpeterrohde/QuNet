@@ -1,4 +1,6 @@
 """
+Unit tests for QuNet
+
 Hudson's style-guide convention for testing:
 
 + Redundency is good.
@@ -22,8 +24,11 @@ using SimpleWeightedGraphs
 
 # Perhaps put these includes in the unit tests so I don't have to refresh.
 include("network-library/barbell.jl")
+include("network-library/simple_network.jl")
 include("network-library/simple_satnet.jl")
 include("network-library/small_square.jl")
+include("network-library/shortest_path_test.jl")
+include("network-library/smalltemp.jl")
 
 @testset "Network.jl" begin
     # Test: QNetwork is correctly initialised
@@ -175,18 +180,17 @@ end
 
 
 @testset "CostVector.jl" begin
-    # Test 1: convert_costs to decibelic form
+    # Test: convert_costs to decibelic form
     cost_vector = Dict("loss"=>0.5, "Z"=>0.5)
     dB_cv = convert_costs(cost_vector, false)
-    println(dB_cv)
     @test (cost_vector["loss"] == 3.0102999566398116 &&
     cost_vector["Z"]== Inf)
 
-    # Test 2: convert_cost from decibelic form
+    # Test: convert_cost from decibelic form
     metric_cv = convert_costs(cost_vector, true)
     @test cost_vector == metric_cv
 
-    # Test 3: get_pathcost
+    # Test: get_pathcv for a vector of QChannels
     Q = QNetwork()
     A = BasicNode("A")
     S = PlanSatNode("S")
@@ -195,95 +199,111 @@ end
     for i in [A, S, C]
         add(Q, i)
     end
-    cost_vector = get_pathcost([C])
-    println(cost_vector)
+    cost_vector = get_pathcv([C])
     @test(cost_vector["loss"] == 0.4970454276591223 &&
     cost_vector["Z"]== 0.49694603901995044)
 
+    # Test: get_pathcv for a single QChannel
+    Q = deepcopy(barbell)
+    channel = Q.channels[1]
+    cv = get_pathcv(channel)
+    @test(cv["loss"] == 1 && cv["Z"] == 0.5)
+
+    # Test: get_pathcv for a QNetwork, and a path of Int tuples
+    Q = deepcopy(simple_network)
+    path = [(1,2),(2,3)]
+    pathcv = get_pathcv(Q, path)
+    @test pathcv["loss"] == 2 && pathcv["Z"] == 2
+
+    # Test: get_pathcv for a TemporalGraph and a path of Int tuples
+    T = deepcopy(smalltemp)
+    path = [(1,5)]
+    pathcv = get_pathcv(T, path)
+    @test pathcv["loss"] == 1.0 && pathcv["Z"] == 1.0
 end
 
 @testset "Routing.jl" begin
-    # Test 1: shortest_path for a SimpleWeightedDiGraph
+    # Test: shortest_path for a SimpleWeightedDiGraph
     g = SimpleWeightedDiGraph(2)
     add_edge!(g, 1, 2, 3.14)
     short_path = shortest_path(g, 1, 2)
     @test(short_path[1] == SimpleWeightedEdge(1, 2, 3.14))
 
-    # Test 2: path_length
+    # Test: path_length
     @test(3.14 == QuNet.path_length(g, short_path))
 
-    # Test 3 / 4: remove_shortest_path! for a SimpleWeightedDiGraph
+    # Test: remove_shortest_path! for a SimpleWeightedDiGraph
     removed_path_cost = QuNet.remove_shortest_path!(g, 1, 2)
     @test(removed_path_cost == 3.14)
     @test(length(edges(g)) == 0)
 
-    # Test 4: remove_shortest_path! for a QNetwork
-    Q = QNetwork()
-    A = BasicNode("A")
-    B = BasicNode("B")
-    AB = BasicChannel(A, B)
-    AB.costs = Dict("loss"=>1, "Z"=>0.5)
-    for i in [A, B, AB]
-        add(Q, i)
-    end
-    refresh_graph!(Q)
-    removed_path_cost = QuNet.remove_shortest_path!(Q, "loss", 1, 2)
-    @test(has_path(Q.graph["loss"], 1, 2) == false)
-    @test(removed_path_cost == Dict("Z"=>0.5, "loss"=>1.0))
+    # Test: remove_shortest_path! for a QNetwork returning path
 
-    # Test: remove_shortest_path! for a TemporalGraph
-    G = GridNetwork(2, 2)
-    T = QuNet.TemporalGraph(G, 2)
+    # Test: remove_shortest_path! for a QNetwork returning cost vector
+    Q = deepcopy(shortest_path_test)
+    refresh_graph!(Q)
+    removed_path = QuNet.remove_shortest_path!(Q, "loss", 1, 2)
+    @test(removed_path["Z"] == 10 && removed_path["loss"] == 2)
+
+    # Test: remove_shortest_path! for a TemporalGraph returning path
+
+    # Test: remove_shortest_path! for a TemporalGraph returning cost vector
+    T = deepcopy(smalltemp)
     QuNet.add_async_nodes!(T)
-    removed_path_cost = QuNet.remove_shortest_path!(T, "loss", 1, 2)
+    removed_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
+    @test removed_cv["loss"] == 1 && removed_cv["Z"] == 1
     @test has_edge(T.graph["loss"], 1, 2) == false
+    # Remove shortest path again and test that the correct one was removed
+    removed_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
+    @test removed_cv["loss"] == 1 && removed_cv["Z"] == 1
+    # Remove shortest path once more.
+    remove_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
+    remove_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
+    println(remove_cv)
 
-    # Test 5: new_greedy_multi_path
-    Q = QNetwork()
-    A = BasicNode("A")
-    C = BasicNode("C")
-    B = BasicNode("B")
-    AB = BasicChannel(A, B, exp_cost=false)
-    AC = BasicChannel(A, C, exp_cost=false)
-    CB = BasicChannel(C, B, exp_cost=false)
-    AB.costs = unit_costvector()
-    AC.costs = unit_costvector()
-    CB.costs = unit_costvector()
-
-    for i in [A, B, C, AB, AC, CB]
-        add(Q, i)
-    end
-
-    refresh_graph!(Q)
-
-    result, collisions = QuNet.greedy_multi_path!(Q, purify, "loss", [(1, 2)])
-    @test result[1]["loss"] == 0.37618793838911524
-
-    # Test 6: that greedy_multi_path handles collisions when no edges exist
-    Q = QNetwork()
-    A = BasicNode("A")
-    B = BasicNode("B")
-    add(Q, A)
-    add(Q, B)
-    refresh_graph!(Q)
-    result, collisions = QuNet.greedy_multi_path!(Q, purify, "loss", [(1,2)])
-    @test result[1] == nothing
-    @test collisions == 1
-
-    # Test 7:
-    ss = deepcopy(small_square)
-    result, collisions = QuNet.greedy_multi_path!(ss, purify, "loss",
-    [(1,2), (3,4)])
-    # println(result)
-    @test collisions == 0
-
-    # Test 8: that greedy_multi_path! handles collisions when edges exist
-    ss = deepcopy(small_square)
-    result, collisions = QuNet.greedy_multi_path!(ss, purify, "loss",
-    [(1,3), (2,4)])
-    # println(result)
-    # println(collisions)
-    # TODO: Write some better tests here
+    # # Test 5: new_greedy_multi_path
+    # Q = QNetwork()
+    # A = BasicNode("A")
+    # C = BasicNode("C")
+    # B = BasicNode("B")
+    # AB = BasicChannel(A, B, exp_cost=false)
+    # AC = BasicChannel(A, C, exp_cost=false)
+    # CB = BasicChannel(C, B, exp_cost=false)
+    # AB.costs = unit_costvector()
+    # AC.costs = unit_costvector()
+    # CB.costs = unit_costvector()
+    #
+    # for i in [A, B, C, AB, AC, CB]
+    #     add(Q, i)
+    # end
+    #
+    # refresh_graph!(Q)
+    #
+    # result, collisions = QuNet.greedy_multi_path!(Q, purify, "loss", [(1, 2)])
+    # @test result[1]["loss"] == 0.37618793838911524
+    #
+    # # Test: that greedy_multi_path handles collisions when no edges exist
+    # Q = QNetwork()
+    # A = BasicNode("A")
+    # B = BasicNode("B")
+    # add(Q, A)
+    # add(Q, B)
+    # refresh_graph!(Q)
+    # result, collisions = QuNet.greedy_multi_path!(Q, purify, "loss", [(1,2)])
+    # @test result[1] == nothing
+    # @test collisions == 1
+    #
+    # # Test:
+    # ss = deepcopy(small_square)
+    # result, collisions = QuNet.greedy_multi_path!(ss, purify, "loss",
+    # [(1,2), (3,4)])
+    # # println(result)
+    # @test collisions == 0
+    #
+    # # Test: that greedy_multi_path! handles collisions when edges exist
+    # ss = deepcopy(small_square)
+    # result, collisions = QuNet.greedy_multi_path!(ss, purify, "loss",
+    # [(1,3), (2,4)])
 end
 
 @testset "TemporalGraphs.jl" begin

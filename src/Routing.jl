@@ -13,21 +13,32 @@ end
 
 """
 Finds the total weight/length of a path for a given AbstractGraph.
+Not to be confused with get_pathcv(), which finds the vector of costs for a
+path in a QNetwork.
 
 !!! warning
     For whatever reason, SimpleWeightedDiGraph indexes weights with [dest, src].
     Keep in mind this path_length will likely not work if you pass in anything
     but a SimpleWeightedDiGraph.
 """
-function path_length(graph::AbstractGraph, path)::Float64
+function path_length(graph::AbstractGraph, path::Vector{Tuple{Int64, Int64}})::Float64
     dist = 0.0
     for edge in path
-        # SimpleWeightedDiGraph indexes by [src, dst]. Be careful here!
-        dist += graph.weights[edge.dst, edge.src]
+        # SimpleWeightedDiGraph indexes by [dst, src]. Be careful here!
+        dist += graph.weights[edge[2], edge[1]]
     end
     return dist
 end
 
+
+function path_length(graph::AbstractGraph, path::Vector{LightGraphs.SimpleGraphs.SimpleEdge{Int64}})::Float64
+    dist = 0.0
+    for edge in path
+        # SimpleWeightedDiGraph indexes by [dst, src]. Be careful here!
+        dist += graph.weights[edge.dst, edge.src]
+    end
+    return dist
+end
 
 """
 Removes the shortest path between two nodes of an abstract graph and returns
@@ -39,7 +50,8 @@ the cost. If no path exists, return nothing
     anything but a SimpleWeightedDiGraph
 """
 function remove_shortest_path!(graph::AbstractGraph, src::Int64, dst::Int64;
-    istemp = false)
+    istemp = false, return_as = "cost")
+    @assert return_as in ["cost", "path"]
 
     # Get shortest path. If no path exists, return nothing
     path = shortest_path(graph, src, dst)
@@ -47,14 +59,14 @@ function remove_shortest_path!(graph::AbstractGraph, src::Int64, dst::Int64;
         return nothing
     end
 
-    # Else get the cost of the path
-    cost = path_length(graph, path)
-
     # If path is in TemporalGraph, pop edge list so asynchronus links aren't removed
     if istemp == true
         popfirst!(path)
         pop!(path)
     end
+
+    # Else get the cost of the path
+    cost = path_length(graph, path)
 
     # Hard remove the path from the graph
     for edge in path
@@ -63,26 +75,39 @@ function remove_shortest_path!(graph::AbstractGraph, src::Int64, dst::Int64;
             error("Failed to remove edge in path")
         end
     end
-    return cost
+
+    if return_as == "path"
+        return path
+    else
+        return cost
+    end
 end
 
 """
 Removes the shortest path between two nodes of a QNetwork *with respect to a
 given cost* and returns the cost vector for the path.
 """
-function remove_shortest_path!(network::QNetwork, cost::String, src::Int64, dst::Int64)
-    @assert cost in keys(zero_costvector()) "Invalid cost"
+function remove_shortest_path!(network::QNetwork, cost_id::String, src::Int64, dst::Int64;
+    return_as = "cost")
+    @assert return_as in ["cost", "path"]
+    @assert cost_id in keys(zero_costvector()) "Invalid cost"
 
-    path_costs = Dict{String, Float64}()
-    for cost_type in keys(zero_costvector())
-        cost = remove_shortest_path!(network.graph[cost_type], src, dst)
-        # If cost is nothing, no path exists. Return nothing
-        if cost == nothing
-            return nothing
-        end
-        path_costs[cost_type] = cost
+    if return_as == "cost"
+        # Backup the network so we can infer path costs later
+        netcopy = deepcopy(network)
     end
-    return path_costs
+
+    path = remove_shortest_path!(network.graph[cost_id], src, dst, return_as = "path")
+    if return_as == "path"
+        return path
+    end
+
+    # Else find the costs associated with the path, provided a path was found
+    if path == nothing
+        return nothing
+    end
+    path_cv = get_pathcv(netcopy, path)
+    return path_cv
 end
 
 """
@@ -92,9 +117,16 @@ src and dst, specify them as you would if the graph were non-temporal. E.G. if
 you have a 1x2 network with 2 timesteps and you wanted to find the best path
 between the two nodes, you would specify src:1, dst:2
 """
-function remove_shortest_path!(tempnet::QuNet.TemporalGraph, cost::String,
-    src::Int64, dst::Int64)
-    @assert cost in keys(zero_costvector()) "Invalid cost"
+function remove_shortest_path!(tempnet::QuNet.TemporalGraph, cost_id::String,
+    src::Int64, dst::Int64; return_as = "cost")
+
+    @assert return_as in ["cost", "path"]
+    @assert cost_id in keys(zero_costvector()) "Invalid cost"
+
+    if return_as == "cost"
+        # Backup the network so we can infer path costs later
+        tempcopy = deepcopy(tempnet)
+    end
 
     # Check that src and dst are nodes within range(1, size-of-static-graph)
     if (src > tempnet.nv && dst > tempnet.nv)
@@ -106,16 +138,18 @@ function remove_shortest_path!(tempnet::QuNet.TemporalGraph, cost::String,
     src += tempnet.nv * tempnet.steps
     dst += tempnet.nv * tempnet.steps
 
-    path_costs = Dict{String, Float64}()
-    for cost_type in keys(zero_costvector())
-        cost = remove_shortest_path!(tempnet.graph[cost_type], src, dst, istemp=true)
-        # If cost is nothing, no path exists. Return nothing
-        if cost == nothing
-            return nothing
-        end
-        path_costs[cost_type] = cost
+    # Return shortest path
+    path = remove_shortest_path!(tempnet.graph[cost_id], src, dst, istemp=true, return_as = "path")
+    if return_as == "path"
+        return path
     end
-    return path_costs
+
+    # Else find the costs associated with the path, provided a path was found
+    if path == nothing
+        return nothing
+    end
+    path_cv = get_pathcv(tempcopy, path)
+    return path_cv
 end
 
 """
@@ -134,7 +168,9 @@ the collision count by one, and add "nothing" to pur_paths
 3. Return the array of purified cost vectors and the collision count.
 """
 function greedy_multi_path!(network::QNetwork, purification_method,
-    users, maxpaths::Int64=3)
+    users, maxpaths::Int64=3; return_as="cost")
+
+    @assert return_as in ["cost", "path"]
 
     # List of path costs for each userpair
     path_costs = [Vector{Dict{Any,Any}}() for i in 1:length(users)]
