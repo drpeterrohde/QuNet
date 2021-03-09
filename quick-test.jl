@@ -3,8 +3,10 @@ using LightGraphs
 using SimpleWeightedGraphs
 include("test/network-library/smalltemp.jl")
 
-# Test: remove_shortest_path! for a TemporalGraph
+#Test: greedy_multi_path on a TemporalGraph with 2 end-users
 T = deepcopy(smalltemp)
 QuNet.add_async_nodes!(T)
-removed_path_cost = QuNet.remove_shortest_path!(T, "loss", 1, 2)
-println(removed_path_cost)
+pathset, pur_paths, pathuse_count = QuNet.greedy_multi_path!(T, purify, [(1,4), (2,3)])
+println(pathset)
+println(pur_paths)
+println(pathuse_count)

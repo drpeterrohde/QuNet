@@ -123,6 +123,11 @@ function remove_shortest_path!(tempnet::QuNet.TemporalGraph, cost_id::String,
     t = tempnet.graph[cost_id]
     path = shortest_path(t, src, dst)
 
+    # If length(path) == 0, no path exists. Return nothing
+    if length(path) == 0
+        return nothing, nothing
+    end
+
     # Since path runs from asynchronus nodes,
     # pop the path on either end so asynchronus edges aren't removed
     popfirst!(path)
@@ -159,7 +164,7 @@ the collision count by one, and add "nothing" to pur_paths
 
 3. Return the array of purified cost vectors and the collision count.
 """
-function greedy_multi_path!(network::QNetwork, purification_method,
+function greedy_multi_path!(network::Union{QNetwork, QuNet.TemporalGraph}, purification_method,
     users, maxpaths::Int64=3)
 
     # List of paths for each userpair
@@ -167,35 +172,33 @@ function greedy_multi_path!(network::QNetwork, purification_method,
     # List of path costs for each userpair
     path_costs = [Vector{Dict{Any,Any}}() for i in 1:length(users)]
 
-    # Number of paths used for a given userpair. This will be averaged later
-    num_paths_used = []
-
     for i in 1:maxpaths
         for (userid, user) in enumerate(users)
             src = user[1]; dst = user[2]
             # Remove the shortest path in terms of Z-dephasing and get its cost vector.
             path, path_cv = remove_shortest_path!(network, "Z", src, dst)
             # If pathcv is nothing, no path was found.
-            if pathcv == nothing
+            if path_cv == nothing
                 break
             else
                 push!(pathset[userid], path)
-                push!(path_costs[userid], pathcv)
+                push!(path_costs[userid], path_cv)
             end
         end
     end
 
-    # Purify the paths for each user-pair, checking for end-to-end failures
-    collisions = 0
-
-    # paths_used = [[] for i in 0:3]
-
+    # A tally of the number of paths each end-user purifies together.
+    pathuse_count = [0 for i in 0:maxpaths]
+    # An array of purified cost vectors for each end-user.
     pur_paths = []
+
+    # Purify end-user paths
     for userpaths in path_costs
-        push!(num_paths_used, length(userpaths))
-        # If length(userpaths) == 0, there was an end-to-end failure
-        if length(userpaths) == 0
-            collisions += 1
+        # Increment the tally for the number of paths beting purified
+        len = length(userpaths)
+        pathuse_count[len + 1] += 1
+        # If len == 0, no paths were found between the end-user.
+        if len == 0
             push!(pur_paths, nothing)
         # Otherwise, purify the paths
         else
@@ -205,60 +208,54 @@ function greedy_multi_path!(network::QNetwork, purification_method,
             push!(pur_paths, purcost)
         end
     end
-
-    # Find the average number of paths used:
-    ave_paths_used = mean(num_paths_used)
-
-    if return_as == "path"
-        return paths
-    end
-
-    return pur_paths, collisions, ave_paths_used, paths
+    return pathset, pur_paths, pathuse_count
 end
 
 
-function greedy_multi_path!(tempnet::QuNet.TemporalGraph, purification_method,
-    users, maxpaths::Int64=3)
-
-    # List of path costs for each userpair, where top-level index is userpair.
-    # v = Vector{Dict{Any, Any}}()
-    # path_costs = fill(v, length(users))
-    path_costs = [Vector{Dict{Any,Any}}() for i in 1:length(users)]
-
-    for i in 1:maxpaths
-
-        for (userid, user) in enumerate(users)
-            src = user[1]
-            dst = user[2]
-
-            # Remove the shortest path (In terms of dephasing)
-            pathcv = remove_shortest_path!(tempnet, "Z", src, dst)
-            # If pathcv is nothing, no path was found.
-            if pathcv == nothing
-                break
-            else
-                push!(path_costs[userid], pathcv)
-            end
-        end
-    end
-
-    # Purify each path set, checking for collisions
-    collisions = 0
-    # Vector{Dict{Any, Any}}()
-    pur_paths = []
-
-    for userpaths in path_costs
-        # If length(userpaths) == 0, no paths were found. No purification possible.
-        if length(userpaths) == 0
-            collisions += 1
-            push!(pur_paths, nothing)
-        # Otherwise, purify.
-        else
-            purcost::Dict{Any, Any} = purification_method(userpaths)
-            # Convert purcost from decibels to metric form
-            purcost = convert_costs(purcost)
-            push!(pur_paths, purcost)
-        end
-    end
-    return pur_paths, collisions
-end
+# There's really no need for this function in principle
+# It's exacttly identical to the other function, except it takes a different type
+# function greedy_multi_path!(tempnet::QuNet.TemporalGraph, purification_method,
+#     users, maxpaths::Int64=3)
+#
+#     # List of path costs for each userpair, where top-level index is userpair.
+#     # v = Vector{Dict{Any, Any}}()
+#     # path_costs = fill(v, length(users))
+#     path_costs = [Vector{Dict{Any,Any}}() for i in 1:length(users)]
+#
+#     for i in 1:maxpaths
+#
+#         for (userid, user) in enumerate(users)
+#             src = user[1]
+#             dst = user[2]
+#
+#             # Remove the shortest path (In terms of dephasing)
+#             pathcv = remove_shortest_path!(tempnet, "Z", src, dst)
+#             # If pathcv is nothing, no path was found.
+#             if pathcv == nothing
+#                 break
+#             else
+#                 push!(path_costs[userid], pathcv)
+#             end
+#         end
+#     end
+#
+#     # Purify each path set, checking for collisions
+#     collisions = 0
+#     # Vector{Dict{Any, Any}}()
+#     pur_paths = []
+#
+#     for userpaths in path_costs
+#         # If length(userpaths) == 0, no paths were found. No purification possible.
+#         if length(userpaths) == 0
+#             collisions += 1
+#             push!(pur_paths, nothing)
+#         # Otherwise, purify.
+#         else
+#             purcost::Dict{Any, Any} = purification_method(userpaths)
+#             # Convert purcost from decibels to metric form
+#             purcost = convert_costs(purcost)
+#             push!(pur_paths, purcost)
+#         end
+#     end
+#     return pur_paths, collisions
+# end

@@ -25,3 +25,15 @@ function int_to_simpleedge(path::Vector{Tuple{Int, Int}})
     end
     return new_path
 end
+
+"""
+Convert a path of SimpleEdges into a list of Int tuples
+"""
+function simpleedge_to_int(path::Vector{LightGraphs.SimpleEdge})
+    new_path = []
+    for edge in path
+        new_edge = (edge.src, edge.dst)
+        push!(new_path, new_edge)
+    end
+    return new_path
+end

@@ -319,14 +319,28 @@ end
     @test nv(G) == 8
     @test ne(G) == 18
 
-    #Test: new_greedy_multi_path
+    #Test: greedy_multi_path
     Q = deepcopy(greedy_test)
-    # pur_paths, collisions, ave_paths_used, paths = QuNet.greedy_multi_path!(Q, purify, [(1, 2)])
-    # Work on this!
+    pathset, pur_paths, pathuse_count = QuNet.greedy_multi_path!(Q, purify, [(1, 2)])
+    # Test that all three paths were purified together.
+    @test pathuse_count == [0, 0, 0, 1]
+    # Test that the pathset contains all the paths from "A" to "B"
+    all_paths = [[(1,3),(3,2)], [(1,4), (4,2)], [(1,5), (5,2)]]
+    new_pathset = []
+    for path in pathset[1]
+        path = QuNet.simpleedge_to_int(path)
+        push!(new_pathset, path)
+    end
+    @test new_pathset == all_paths
+
+    #Test: greedy_multi_path on a TemporalGraph with 2 end-users
+    T = deepcopy(smalltemp)
+    QuNet.add_async_nodes!(T)
+    pathset, pur_paths, pathuse_count = greedy_multi_path!(T, purify, [(1,4), (2,3)])
 
 
-    # @test result[1]["loss"] == 0.37618793838911524
-    #
+
+
     # # Test: that greedy_multi_path handles collisions when no edges exist
     # Q = QNetwork()
     # A = BasicNode("A")
