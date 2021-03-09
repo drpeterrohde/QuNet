@@ -29,7 +29,7 @@ end
 """
 Convert a path of SimpleEdges into a list of Int tuples
 """
-function simpleedge_to_int(path::Vector{LightGraphs.SimpleEdge})
+function simpleedge_to_int(path::Vector{LightGraphs.SimpleGraphs.SimpleEdge{Int64}})
     new_path = []
     for edge in path
         new_edge = (edge.src, edge.dst)

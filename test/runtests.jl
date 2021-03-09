@@ -1,7 +1,7 @@
 """
 Unit tests for QuNet
 
-Hudson's style-guide convention for testing:
+Hudson's style convention for testing:
 
 + Redundency is good.
 + Don't aim to be redundant, but don't aim for tight scripting either.
@@ -108,7 +108,7 @@ include("network-library/greedy_test.jl")
 end
 
 
-@testset "Channel.jl"
+@testset "Channel.jl" begin
     #Test Basic Channel is initalised with costs
     AB = BasicChannel(A, B)
     @test typeof(AB) == BasicChannel
@@ -119,7 +119,7 @@ end
 end
 
 
-@testset "Node.jl"
+@testset "Node.jl" begin
     # Test Basic node is initalised
     A = BasicNode("A")
     @test A.name == "A"
@@ -164,19 +164,7 @@ end
     cv1["Z"] = 1.0
     cv2["Z"] = 2.0
     result = purify([cv1, cv2])
-    println(result)
-
-    # Test purification for paths
-    Q = QNetwork()
-    A = BasicNode("A")
-    B = BasicNode("B")
-    S = PlanSatNode("S")
-    B.location = Coords(0, 1000, 0)
-    S.location = Coords(0, 0, 1000)
-    AB = BasicChannel(A, B, true)
-    AS = AirChannel(A, S)
-    results = QuNet.purify([AB, AS], false)
-    print(results)
+    # TODO: Compare with hand calc
 end
 
 
@@ -222,6 +210,7 @@ end
     pathcv = get_pathcv(T, path)
     @test pathcv["loss"] == 1.0 && pathcv["Z"] == 1.0
 end
+
 
 @testset "Routing.jl" begin
     # Test: shortest_path for a SimpleWeightedDiGraph
@@ -336,33 +325,20 @@ end
     #Test: greedy_multi_path on a TemporalGraph with 2 end-users
     T = deepcopy(smalltemp)
     QuNet.add_async_nodes!(T)
-    pathset, pur_paths, pathuse_count = greedy_multi_path!(T, purify, [(1,4), (2,3)])
+    pathset, pur_paths, pathuse_count = QuNet.greedy_multi_path!(T, purify, [(1,4), (2,3)])
+    # Test that 2 edge-disjoint paths were found for each usepair
+    @test(pathuse_count[3] == 2)
 
-
-
-
-    # # Test: that greedy_multi_path handles collisions when no edges exist
-    # Q = QNetwork()
-    # A = BasicNode("A")
-    # B = BasicNode("B")
-    # add(Q, A)
-    # add(Q, B)
-    # refresh_graph!(Q)
-    # result, collisions = QuNet.greedy_multi_path!(Q, purify, "loss", [(1,2)])
-    # @test result[1] == nothing
-    # @test collisions == 1
-    #
-    # # Test:
-    # ss = deepcopy(small_square)
-    # result, collisions = QuNet.greedy_multi_path!(ss, purify, "loss",
-    # [(1,2), (3,4)])
-    # # println(result)
-    # @test collisions == 0
-    #
-    # # Test: that greedy_multi_path! handles collisions when edges exist
-    # ss = deepcopy(small_square)
-    # result, collisions = QuNet.greedy_multi_path!(ss, purify, "loss",
-    # [(1,3), (2,4)])
+    # Test: A grid lattice completely saturated with end-users has no purification
+    # i.e. no end-user used 2 or more paths
+    # NOTE: I actually proved myself wrong on this one. Purification of 2 and even 3
+    # Paths is possible depending on the choice of userpair. Will leave the code here
+    # As proof:
+    # Q = GridNetwork(10, 10)
+    # userpairs = make_user_pairs(Q, 50)
+    # pathset, purpaths, pathuse_count = QuNet.greedy_multi_path!(Q, purify, userpairs)
+    # @test pathuse_count[3] == 0
+    # @test pathuse_count[4] == 0
 end
 
 @testset "TemporalGraphs.jl" begin
