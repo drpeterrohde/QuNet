@@ -2,12 +2,12 @@
 A graph to test shortest_path functions.
 
 The shortest path of this graph in terms of loss is:
-A - M3 - B
-With a dB cost of 2.0
+A(1) - M3(5) - B(2)
+With costs of loss:10.0, Z:2.0
 
 The shortest path in terms of loss is:
-A - M1 - B
-With a dB cost of 2.0
+A(1) - M1(3) - B(2)
+With costs of loss:2.0, Z:10.0
 """
 
 shortest_path_test = QNetwork()

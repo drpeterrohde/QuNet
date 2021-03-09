@@ -97,13 +97,3 @@ function get_pathcv(network::Union{QNetwork, QuNet.TemporalGraph},
     pathcost = get_pathcv(network, new_path)
     return pathcost
 end
-
-# NOTE: get_pathcv is not well defined for an abstract graph, since cost_vector can't
-# be inferred from a single weighted graph.
-# function get_pathcv(graph::AbstractGraph, path::Vector{Tuple{Int64, Int64}})
-#    weight = 0
-#    for edge in path
-#        weight += graph.weights[edge[1], edge[2]]
-#    end
-#    return weight
-# end

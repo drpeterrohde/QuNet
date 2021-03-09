@@ -29,6 +29,7 @@ include("network-library/simple_satnet.jl")
 include("network-library/small_square.jl")
 include("network-library/shortest_path_test.jl")
 include("network-library/smalltemp.jl")
+include("network-library/greedy_test.jl")
 
 @testset "Network.jl" begin
     # Test: QNetwork is correctly initialised
@@ -233,53 +234,97 @@ end
     @test(3.14 == QuNet.path_length(g, short_path))
 
     # Test: remove_shortest_path! for a SimpleWeightedDiGraph
-    removed_path_cost = QuNet.remove_shortest_path!(g, 1, 2)
+    removed_path, removed_path_cost = QuNet.remove_shortest_path!(g, 1, 2)
     @test(removed_path_cost == 3.14)
     @test(length(edges(g)) == 0)
 
-    # Test: remove_shortest_path! for a QNetwork returning path
-
-    # Test: remove_shortest_path! for a QNetwork returning cost vector
+    # Test: remove_shortest_path! for a QNetwork
     Q = deepcopy(shortest_path_test)
-    refresh_graph!(Q)
-    removed_path = QuNet.remove_shortest_path!(Q, "loss", 1, 2)
-    @test(removed_path["Z"] == 10 && removed_path["loss"] == 2)
+    removed_path, removed_cv = QuNet.remove_shortest_path!(Q, "loss", 1, 2)
+    # Test removed path is correct
+    shortestpath = [(1,3),(3,2)]
+    shortestpath = QuNet.int_to_simpleedge(shortestpath)
+    @test(shortestpath == removed_path)
 
-    # Test: remove_shortest_path! for a TemporalGraph returning path
+    # Test removed path costs are correct
+    @test(removed_cv["Z"] == 10 && removed_cv["loss"] == 2)
+
+    # Test that the correct path was removed for both weighted graphs of the QNetwork
+    # And check that edges are removed in both directions
+    G = Q.graph["loss"]
+    @test has_edge(G, 1, 3) == false && has_edge(G, 3, 1) == false &&
+    has_edge(G, 3, 2) == false && has_edge(G, 2, 3) == false
+
+    # Check that no nodes and no other edges were removed
+    @test nv(G) == length(Q.nodes)
+    @test ne(G) == (length(Q.channels) - 2) * 2
+
+    G = Q.graph["Z"]
+    @test has_edge(G, 1, 3) == false && has_edge(G, 3, 1) == false &&
+    has_edge(G, 3, 2) == false && has_edge(G, 2, 3) == false
+
+    # Check that no nodes and no other edges were removed
+    @test nv(G) == length(Q.nodes)
+    @test ne(G) == (length(Q.channels) - 2) * 2
 
     # Test: remove_shortest_path! for a TemporalGraph returning cost vector
     T = deepcopy(smalltemp)
     QuNet.add_async_nodes!(T)
-    removed_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
+    removed_path, removed_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
+    # Test removed path is correct
+    shortestpath = [(1,2)]
+    shortestpath = QuNet.int_to_simpleedge(shortestpath)
+    @test(shortestpath == removed_path)
+    # Test removed path cost vectors is correct.
     @test removed_cv["loss"] == 1 && removed_cv["Z"] == 1
-    @test has_edge(T.graph["loss"], 1, 2) == false
-    # Remove shortest path again and test that the correct one was removed
-    removed_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
-    @test removed_cv["loss"] == 1 && removed_cv["Z"] == 1
-    # Remove shortest path once more.
-    remove_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
-    remove_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
-    println(remove_cv)
 
-    # # Test 5: new_greedy_multi_path
-    # Q = QNetwork()
-    # A = BasicNode("A")
-    # C = BasicNode("C")
-    # B = BasicNode("B")
-    # AB = BasicChannel(A, B, exp_cost=false)
-    # AC = BasicChannel(A, C, exp_cost=false)
-    # CB = BasicChannel(C, B, exp_cost=false)
-    # AB.costs = unit_costvector()
-    # AC.costs = unit_costvector()
-    # CB.costs = unit_costvector()
-    #
-    # for i in [A, B, C, AB, AC, CB]
-    #     add(Q, i)
-    # end
-    #
-    # refresh_graph!(Q)
-    #
-    # result, collisions = QuNet.greedy_multi_path!(Q, purify, "loss", [(1, 2)])
+    # Remove shortest path again, and test that the path in the next temporal layer was removed
+    removed_path, removed_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
+    shortestpath = [(5,6)]
+    shortestpath = QuNet.int_to_simpleedge(shortestpath)
+    @test(shortestpath == removed_path)
+
+    # Remove shortest path one final time:
+    # test that the path now takes a longer route in first temporal layer
+    removed_path, removed_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
+    shortestpath = [(1,3),(3,4),(4,2)]
+    shortestpath = QuNet.int_to_simpleedge(shortestpath)
+    @test(shortestpath == removed_path)
+    # test that the costs of this path are correct
+    @test(removed_cv["loss"] == 3.0 && removed_cv["Z"] == 3.0)
+
+    # Test that the correct path was removed for both weighted graphs of the TempNet
+    # And check that edges are removed in both directions
+    G = T.graph["loss"]
+    @test has_edge(G, 1, 3) == false && has_edge(G, 3, 1) == false &&
+    has_edge(G, 3, 4) == false && has_edge(G, 4, 3) == false &&
+    has_edge(G, 4, 2) == false && has_edge(G, 2, 4) == false
+
+    G = T.graph["loss"]
+    @test has_edge(G, 1, 3) == false && has_edge(G, 3, 1) == false &&
+    has_edge(G, 3, 4) == false && has_edge(G, 4, 3) == false &&
+    has_edge(G, 4, 2) == false && has_edge(G, 2, 4) == false
+
+    # Check that no nodes and no other channels are removed for TempNet
+    T = deepcopy(smalltemp)
+    QuNet.add_async_nodes!(T)
+    removed_path, removed_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
+    QuNet.remove_async_nodes!(T)
+
+    G = T.graph["loss"]
+    @test nv(G) == 8
+    @test ne(G) == 18
+
+    G = T.graph["Z"]
+    @test nv(G) == 8
+    @test ne(G) == 18
+
+    #Test: new_greedy_multi_path
+    Q = deepcopy(greedy_test)
+    # pur_paths, collisions, ave_paths_used, paths = QuNet.greedy_multi_path!(Q, purify, [(1, 2)])
+    # Work on this!
+
+
     # @test result[1]["loss"] == 0.37618793838911524
     #
     # # Test: that greedy_multi_path handles collisions when no edges exist
