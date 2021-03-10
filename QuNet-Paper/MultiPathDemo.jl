@@ -59,6 +59,11 @@ function plot_with_userpairs(max_pairs::Int64,
     P2 = [path_data[i][3]/i for i in 1:max_pairs]
     P3 = [path_data[i][4]/i for i in 1:max_pairs]
 
+    P0e = [path_err[i][1]/i for i in 1:max_pairs]
+    P1e = [path_err[i][2]/i for i in 1:max_pairs]
+    P2e = [path_err[i][3]/i for i in 1:max_pairs]
+    P3e = [path_err[i][4]/i for i in 1:max_pairs]
+
     # Save data to csv
     # file = "userpairs.csv"
     # writedlm(file,  ["Average number of paths used",
@@ -72,17 +77,16 @@ function plot_with_userpairs(max_pairs::Int64,
     legend=:bottomright)
     plot!(x, z, seriestype = :scatter, yerror = z_err, label=L"$F$")
     xaxis!(L"$\textrm{Number of End User Pairs}$")
-    # savefig("cost_userpair.png")
-    # savefig("cost_userpair.pdf")
+    savefig("plots/cost_userpair.png")
+    savefig("plots/cost_userpair.pdf")
 
-    plot(x, P0, linewidth=2, label=L"$P_0$", legend= :topright)
-    plot!(x, P1, linewidth=2, label=L"$P_1$")
-    plot!(x, P2, linewidth=2, label=L"$P_2$")
-    plot!(x, P3, linewidth=2, label=L"$P_3$")
-    # xaxis!(L"$\textrm{Number of End User Pairs}$")
-    # yaxis!(L"$\textrm{Average Number of Paths Used Per User Pair}$")
-    # savefig("path_userpair.png")
-    # savefig("path_userpair.pdf")
+    plot(x, P0, ylims=(0,1), linewidth=2, yerr = P0e, label=L"$P_0$", legend= :right)
+    plot!(x, P1, linewidth=2, yerr = P1e, label=L"$P_1$")
+    plot!(x, P2, linewidth=2, yerr = P2e, label=L"$P_2$")
+    plot!(x, P3, linewidth=2, yerr = P3e, label=L"$P_3$")
+    xaxis!(L"$\textrm{Number of End User Pairs}$")
+    savefig("plots/path_userpair.png")
+    savefig("plots/path_userpair.pdf")
 end
 
 
@@ -137,6 +141,11 @@ function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, nu
     P2 = [path_data[i][3]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
     P3 = [path_data[i][4]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
 
+    P0e = [path_err[i][1]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
+    P1e = [path_err[i][2]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
+    P2e = [path_err[i][3]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
+    P3e = [path_err[i][4]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
+
     # Save data to csv
     # file = "percolations.csv"
     # writedlm(file,  ["Average number of paths used",
@@ -150,16 +159,16 @@ function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, nu
     legend=:bottomright)
     plot!(x, z, seriestype = :scatter, yerror = z_err, label=L"$F$")
     xaxis!(L"$\textrm{Probability of Edge Removal}$")
-    # savefig("cost_percolation.pdf")
-    # savefig("cost_percolation.png")
+    savefig("plots/cost_percolation.pdf")
+    savefig("plots/cost_percolation.png")
 
-    plot(x, P0, linewidth=2, label=L"$P_0$", legend= :topright)
-    plot!(x, P1, linewidth=2, label=L"$P_1$")
-    plot!(x, P2, linewidth=2, label=L"$P_2$")
-    plot!(x, P3, linewidth=2, label=L"$P_3$")
+    plot(x, P0, ylims=(0,1), linewidth=2, yerr = P0e, label=L"$P_0$", legend= :right)
+    plot!(x, P1, linewidth=2, yerr = P1e, label=L"$P_1$")
+    plot!(x, P2, linewidth=2, yerr = P2e, label=L"$P_2$")
+    plot!(x, P3, linewidth=2, yerr = P3e, label=L"$P_3$")
     xaxis!(L"$\textrm{Probability of Edge Removal}$")
-    # savefig("path_percolation.pdf")
-    # savefig("path_percolation.png")
+    savefig("plots/path_percolation.pdf")
+    savefig("plots/path_percolation.png")
 end
 
 
@@ -463,11 +472,12 @@ will take between 2 to 12 hours each. Reader beware!
 """
 # Usage : (max_pairs::Int64, num_trials::Int64)
 # plot_with_userpairs(40, 100000)
-# plot_with_userpairs(20, 1000)
+# plot_with_userpairs(50, 1000)
 
 # Usage : (perc_range::Tuple{Float64, Float64, Float64}, num_trials::Int64)
 # plot_with_percolations((0.0, 0.01, 0.7), 100000)
-# plot_with_percolations((0.0, 0.1, 0.7), 10000)
+# ETA 7 hours
+plot_with_percolations((0.0, 0.01, 0.7), 200000)
 
 # Usage : (num_trials::Int64, max_depth::Int64)
 # plot_with_timedepth(100, 30)
