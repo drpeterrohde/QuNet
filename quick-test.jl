@@ -1,8 +1,12 @@
 using QuNet
 using LightGraphs
 using SimpleWeightedGraphs
+# include("test/network-library/barbell.jl")
 
-Q = GridNetwork(10, 10)
-userpairs = make_user_pairs(Q, 50)
-pathset, purpaths, pathuse_count = QuNet.greedy_multi_path!(Q, purify, userpairs)
-println(pathuse_count)
+T = deepcopy(smalltemp)
+QuNet.add_async_nodes!(T)
+performance, performance_err, ave_pathcounts, ave_pathcounts_err = net_performance(T, 100, 2)
+println(performance)
+println(performance_err)
+println(ave_pathcounts)
+println(ave_pathcounts_err)

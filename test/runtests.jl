@@ -342,23 +342,22 @@ end
 end
 
 @testset "TemporalGraphs.jl" begin
-    # Test 1: TemporalGraph initialises correctly
+    # Test: TemporalGraph initialises correctly
     G = GridNetwork(2, 2)
     T = QuNet.TemporalGraph(G, 2)
     @test nv(T.graph["loss"]) == 8
     @test T.nv == 4
 
-    # Test TemporalGraph attribute memory_prob works
+    # Test: TemporalGraph attribute memory_prob works
     G = GridNetwork(10, 10)
     T = QuNet.TemporalGraph(G, 2, memory_prob=0.0)
     @test ne(T.graph["Z"]) == 720
 
-    # Test TemporalGraph adds 100 more edges when memory_prob = 100%
+    # Test: TemporalGraph adds 100 more edges when memory_prob = 100%
     T = QuNet.TemporalGraph(G, 2, memory_prob=1.0)
     @test ne(T.graph["Z"]) == 820
 
-    # Test TemporalGraph with a default memory_cost, and check that temporal edges
-    # Have that cost.
+    # Test TemporalGraph with a default memory_cost, check that temporal edges have that cost.
     T = QuNet.TemporalGraph(G, 2, memory_prob=1.0, memory_costs=Dict("Z"=>3, "loss"=>4))
     graph = T.graph["Z"]
     @test graph.weights[101, 1] == 3
@@ -381,4 +380,52 @@ end
     # Test rem_async_nodes!
     QuNet.remove_async_nodes!(T)
     @test nv(T.graph["loss"]) == 8
+end
+
+
+@testset "Benchmarking.jl" begin
+    # TODO Test dict_average
+    # TODO Test dict_err
+
+    # Test make_user_pairs for QNetwork.
+    Q = GridNetwork(2,2)
+    # NOTE: One important detail I noticed:
+    # make_user_pairs ordinarily generates random user pairs. I verified this in
+    # A seperate test file. Impressively, the @testset seems to fix the seed, such
+    # that no matter how many times you roll the dice, you get the same outcome.
+    # Convenient for unit testing, not so much for verifying randomness.
+    user_pair = make_user_pairs(Q, 2)
+    @test user_pair == [(3,4),(2,1)]
+
+    # Test ave_paths_used
+    pathuse_count = [5,1,2,4]
+    # Expected answer:
+    # (0*5 + 1*1 + 2*2 + 3*4) / (5 + 1 + 2 + 4) == 17/12
+    ave_pathuse = QuNet.ave_paths_used(pathuse_count)
+    @test(ave_pathuse == 17/12)
+
+    # TODO Test net_performance
+    # Test for 1 trial of barbell network
+    # usage: (network::QNetwork, num_trials::Int64, num_pairs::Int64; max_paths=3)
+    Q = deepcopy(barbell)
+    performance, performance_err, ave_pathcounts, ave_pathcounts_err = net_performance(barbell, 1, 1)
+    # Check ave_pathcounts is correct
+    @test ave_pathcounts == [0, 1, 0, 0]
+    # Only one sample taken, so no variance in ave_pathcounts:
+    @test all(isnan(i) == true for i in ave_pathcounts_err)
+
+    # Test net_performance for many trials of barbell network
+    Q = deepcopy(barbell)
+    performance, performance_err, ave_pathcounts, ave_pathcounts_err = net_performance(barbell, 100, 1)
+    @test ave_pathcounts == [0, 1, 0, 0]
+    # Only one path possible, so no error
+    @test ave_pathcounts_err == [0, 0, 0, 0]
+
+    # Test net_performance for TemporalGraph
+    T = deepcopy(smalltemp)
+    QuNet.add_async_nodes!(T)
+    performance, performance_err, ave_pathcounts, ave_pathcounts_err = net_performance(T, 100, 2)
+    # Check that the average number of paths used is 2
+    @test ave_pathcounts[3] == 2.0
+    @test ave_pathcounts_err == [0.0, 0.0, 0.0, 0.0]
 end

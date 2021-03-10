@@ -45,8 +45,12 @@ end
 
 
 """Generate a list of user_pairs for a QNetwork"""
-function make_user_pairs(QNetwork, num_pairs)
-    num_nodes = length(QNetwork.nodes)
+function make_user_pairs(net::Union{QNetwork, QuNet.TemporalGraph}, num_pairs::Int)
+    if typeof(net) == QNetwork
+        num_nodes = length(net.nodes)
+    else
+        num_nodes = net.nv
+    end
     @assert num_nodes >= num_pairs*2 "Graph space too small for number of pairs"
     rand_space = Array(collect(1:num_nodes))
     pairs = Vector{Tuple}()
@@ -65,59 +69,80 @@ function make_user_pairs(QNetwork, num_pairs)
     return pairs
 end
 
-
 """
-Takes a network as input and return greedy_multi_path! performance statistics for some number of
-random user pairs.
+Given a tally for the number of paths used by each end-user in a greedy_protocol:
+(i.e. [3,4,2,1] meaning 3 end-users used no paths, 4, end-users used 1 path, etc.)
+This function finds the average number of paths used in the protocol.
 """
-function net_performance(network::QNetwork, num_trials::Int64, num_pairs::Int64,
-    with_err::Bool=false; max_paths=3)
-
-    total_collisions = 0
-    pfmnce_data = []
-    path_data = []
-
-    for i in 1:num_trials
-        net = deepcopy(network)
-
-        # No need to refresh graph here. GridNetwork is already ready to go
-        #refresh_graph!(net)
-
-        # Generate random communication pairs
-        user_pairs = make_user_pairs(network, num_pairs)
-        # NOTE Added max_paths here. Check me first if something goes wrong.
-        net_data, collisions, ave_paths_used = QuNet.greedy_multi_path!(net, purify, user_pairs, max_paths)
-        total_collisions += collisions
-        push!(path_data, ave_paths_used)
-
-        # If net_data contains nothing,
-        filter!(x->x!=nothing, net_data)
-
-        # Mean well defined only if data set > 0
-        if length(net_data) > 0
-            # Average the data
-            ave = dict_average(net_data)
-            push!(pfmnce_data, ave)
-        end
+function ave_paths_used(pathuse_count::Vector{Int})
+    ave_pathuse = 0.0
+    len = length(pathuse_count)
+    for i in 1:len
+        ave_pathuse += (i-1) * pathuse_count[i]
     end
-
-    if with_err == true
-        # Performance data and error
-        pfmnce_err = dict_err(pfmnce_data)
-        pfmnce_data = dict_average(pfmnce_data)
-        # Path data and error
-        path_err = std(path_data)
-        path_data = mean(path_data)
-        return pfmnce_data, pfmnce_err, total_collisions, path_data, path_err
-    end
-
-    # Average path_data
-    path_data = mean(path_data)
-    pfmnce_data = dict_average(pfmnce_data)
-    return pfmnce_data, total_collisions, path_data
+    ave_pathuse = ave_pathuse / sum(pathuse_count)
+    return ave_pathuse
 end
 
 
+"""
+Takes a network as input and return greedy_multi_path! performance statistics for some number of
+random user pairs. Ensure graph is refreshed before starting.
+"""
+function net_performance(network::Union{QNetwork, QuNet.TemporalGraph},
+    num_trials::Int64, num_pairs::Int64; max_paths=3)
+
+    # Sample of average routing costs between end-users
+    ave_cost_data = []
+    # Sample of path usage statistics for the algorithm
+    pathcount_data = []
+
+    for i in 1:num_trials
+        net = deepcopy(network)
+        # Generate random communication pairs
+        user_pairs = make_user_pairs(network, num_pairs)
+        dummy, routing_costs, pathuse_count = QuNet.greedy_multi_path!(net, purify, user_pairs, max_paths)
+
+        # Filter out entries where no paths were found and costs are not well defined
+        filter!(x->x!=nothing, routing_costs)
+
+        # If the mean is well defined, average the routing costs and push to ave_cost_data
+        if length(routing_costs) > 0
+            # Average the data
+            ave = dict_average(routing_costs)
+            push!(ave_cost_data, ave)
+        end
+        push!(pathcount_data, pathuse_count)
+    end
+
+    # Find the mean and standard error of ave_cost_data. Call this the performance
+    performance = dict_average(ave_cost_data)
+    performance_err = dict_err(ave_cost_data)
+
+    # Find the mean and standard error of the path usage statistics:
+
+    # Usage:
+        # Each entry in pathcount_data is a vector of Ints of length (max_paths + 1)
+        # An example entry is [3, 4, 3, 1]
+        # Where 3 end-users found 0 paths, 4 end-users found 1 path, etc.
+        # Given a collection of path statistics, ie. [[0, 1, 2, 1], [0, 0, 3, 0], [0, 1, 2, 1]]
+        # we want to return vectors of average path usage with associated error:
+        # ie. [0, 0.666, 2.333, 0.666] for means
+    ave_pathcounts = [0.0 for i in 0:max_paths]
+    ave_pathcounts_err = [0.0 for i in 0:max_paths]
+
+    for i in 1:max_paths+1
+        data = [pathcount_data[j][i] for j in 1:num_trials]
+        ave_pathcounts[i] = mean(data)
+        ave_pathcounts_err[i] = std(data)/(sqrt(length(data)))
+    end
+
+    return performance, performance_err, ave_pathcounts, ave_pathcounts_err
+end
+
+
+
+# I suspect this thing is probably redudnant. Just do a union as before.
 function net_performance(tempgraph::QuNet.TemporalGraph, num_trials::Int64,
     user_pairs::Vector{Tuple}, with_err::Bool=false; max_paths=3)
 
