@@ -14,9 +14,16 @@ Plot the performance statistics of greedy-multi-path vs the number of end-user p
 function plot_with_userpairs(max_pairs::Int64,
     num_trials::Int64)
 
+    # The average routing costs between end-users sampled over num_trials for different numbers of end-users
     perf_data = []
-    collision_data = []
+    # The associated errors of the costs sampled over num_trials
+    perf_err = []
+    # Spectograms of the average number of paths used in the routing strategy, sampled over num_trials
+    # for different numbers of end-users
+    # i.e. [3,4,5]: 3 end-users found no path on average, 4 end-users found 1 path on average etc.
     path_data = []
+    # Associated errors of path_data
+    path_err = []
 
     for i in 1:max_pairs
         println("Collecting for pairsize: $i")
@@ -24,40 +31,58 @@ function plot_with_userpairs(max_pairs::Int64,
         net = GridNetwork(10, 10)
 
         # Collect performance statistics
-        performance, collisions, ave_paths_used = net_performance(net, num_trials, i)
-        collision_rate = collisions/(num_trials*i)
-        push!(collision_data, collision_rate)
-        push!(perf_data, performance)
-        push!(path_data, ave_paths_used)
+        p, p_e, pat, pat_e = net_performance(net, num_trials, i)
+        push!(perf_data, p)
+        push!(perf_err, p_e)
+        push!(path_data, pat)
+        push!(path_err, pat_e)
+
+
+        # collision_rate = collisions/(num_trials*i)
+        # push!(collision_data, collision_rate)
+        # push!(perf_data, performance)
+        # push!(path_data, ave_paths_used)
     end
 
     # Get values for x axis
     x = collect(1:max_pairs)
 
-    # Extract data from performance data
-    loss_arr = collect(map(x->x["loss"], perf_data))
-    z_arr = collect(map(x->x["Z"], perf_data))
+    # Extract data from performance
+    loss = collect(map(x->x["loss"], perf_data))
+    z = collect(map(x->x["Z"], perf_data))
+    loss_err = collect(map(x->x["loss"], perf_err))
+    z_err = collect(map(x->x["Z"], perf_err))
+
+    # Extract data from path: PX is the rate of using X paths
+    P0 = [path_data[i][1]/i for i in 1:max_pairs]
+    P1 = [path_data[i][2]/i for i in 1:max_pairs]
+    P2 = [path_data[i][3]/i for i in 1:max_pairs]
+    P3 = [path_data[i][4]/i for i in 1:max_pairs]
 
     # Save data to csv
-    file = "userpairs.csv"
-    writedlm(file,  ["Average number of paths used",
-                    path_data, "Efficiency", loss_arr,
-                    "Z-dephasing", z_arr], ',')
+    # file = "userpairs.csv"
+    # writedlm(file,  ["Average number of paths used",
+    #                 path_data, "Efficiency", loss_arr,
+    #                 "Z-dephasing", z_arr], ',')
 
     # Plot
-    plot(x, collision_data, ylims=(0,1), linewidth=2, label=L"$P$",
-    legend=:bottomright)
-    plot!(x, loss_arr, linewidth=2, label=L"$\eta$")
-    plot!(x, z_arr, linewidth=2, label=L"$F$")
-    xaxis!(L"$\textrm{Number of End User Pairs}$")
-    savefig("cost_userpair.png")
-    savefig("cost_userpair.pdf")
+    # plot(x, collision_data, ylims=(0,1), linewidth=2, label=L"$P$", legend=:bottomright)
 
-    plot(x, path_data, linewidth=2, legend=false)
+    plot(x, loss, ylims=(0,1), seriestype = :scatter, yerror = loss_err, label=L"$\eta$",
+    legend=:bottomright)
+    plot!(x, z, seriestype = :scatter, yerror = z_err, label=L"$F$")
     xaxis!(L"$\textrm{Number of End User Pairs}$")
-    yaxis!(L"$\textrm{Average Number of Paths Used Per User Pair}$")
-    savefig("path_userpair.png")
-    savefig("path_userpair.pdf")
+    # savefig("cost_userpair.png")
+    # savefig("cost_userpair.pdf")
+
+    plot(x, P0, linewidth=2, label=L"$P_0$", legend= :topright)
+    plot!(x, P1, linewidth=2, label=L"$P_1$")
+    plot!(x, P2, linewidth=2, label=L"$P_2$")
+    plot!(x, P3, linewidth=2, label=L"$P_3$")
+    # xaxis!(L"$\textrm{Number of End User Pairs}$")
+    # yaxis!(L"$\textrm{Average Number of Paths Used Per User Pair}$")
+    # savefig("path_userpair.png")
+    # savefig("path_userpair.pdf")
 end
 
 
@@ -66,14 +91,15 @@ Plot the performance statistics of greedy-multi-path with respect to edge percol
 rate (The probability that a given edge is removed)
 """
 function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, num_trials::Int64)
+    # number of end-user pairs
+    num_pairs = 3
 
     # Network to be percolated.
     size = 10
     net = GridNetwork(size, size)
 
     perf_data = []
-    err_data = []
-    collision_data = []
+    perf_err = []
     path_data = []
     path_err = []
 
@@ -84,58 +110,56 @@ function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, nu
         perc_net = QuNet.percolate_edges(net, p)
         refresh_graph!(perc_net)
 
-        # Collect performance data (with variance) and collision count
-        num_pairs = 3
-
-        performance, errors, collisions, ave_paths_used, ave_path_err =
-        net_performance(perc_net, num_trials, num_pairs, true)
-
-        # Normalise collisions
-        collision_rate = collisions/(num_trials*num_pairs)
-
-        push!(perf_data, performance)
-        push!(err_data, errors)
-        push!(collision_data, collision_rate)
-        push!(path_data, ave_paths_used)
-        push!(path_err, ave_path_err)
+        # Collect performance data with error
+        p, p_e, pat, pat_e = net_performance(perc_net, num_trials, num_pairs)
+        push!(perf_data, p)
+        push!(perf_err, p_e)
+        push!(path_data, pat)
+        push!(path_err, pat_e)
     end
 
     # Get values for x axis
     x = collect(perc_range[1]:perc_range[2]:perc_range[3])
 
-    # Extract data from performance data
-    loss_arr = collect(map(x->x["loss"], perf_data))
-    z_arr = collect(map(x->x["Z"], perf_data))
+    # Extract performance data
+    loss = collect(map(x->x["loss"], perf_data))
+    z = collect(map(x->x["Z"], perf_data))
+    loss_err = collect(map(x->x["loss"], perf_err))
+    z_err = collect(map(x->x["Z"], perf_err))
 
-    # Extract error data
-    loss_error = collect(map(x->x["loss"], err_data))
-    z_error = collect(map(x->x["Z"], err_data))
+    # # Possibly redundent here?
+    # loss_arr = replace(loss_arr, nothing=>NaN)
+    # z_arr = replace(z_arr, nothing=>NaN)
 
-    # Possibly redundent here?
-    loss_arr = replace(loss_arr, nothing=>NaN)
-    z_arr = replace(z_arr, nothing=>NaN)
+    # Extract data from path: PX is the rate of using X paths
+    P0 = [path_data[i][1]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
+    P1 = [path_data[i][2]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
+    P2 = [path_data[i][3]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
+    P3 = [path_data[i][4]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
 
     # Save data to csv
-    file = "percolations.csv"
-    writedlm(file,  ["Average number of paths used",
-                    path_data, "Efficiency", loss_arr,
-                    "Efficiency Error", loss_error,
-                    "Z-dephasing", z_arr,
-                    "Z Error", z_error], ',')
+    # file = "percolations.csv"
+    # writedlm(file,  ["Average number of paths used",
+    #                 path_data, "Efficiency", loss_arr,
+    #                 "Efficiency Error", loss_error,
+    #                 "Z-dephasing", z_arr,
+    #                 "Z Error", z_error], ',')
 
     # Plot
-    plot(x, loss_arr, ylims=(0,1), seriestype = :scatter, yerror = loss_error, label=L"$\eta$",
+    plot(x, loss, ylims=(0,1), seriestype = :scatter, yerror = loss_err, label=L"$\eta$",
     legend=:bottomright)
-    plot!(x, z_arr, seriestype = :scatter, yerror = z_error, label=L"$F$")
+    plot!(x, z, seriestype = :scatter, yerror = z_err, label=L"$F$")
     xaxis!(L"$\textrm{Probability of Edge Removal}$")
-    savefig("cost_percolation.pdf")
-    savefig("cost_percolation.png")
+    # savefig("cost_percolation.pdf")
+    # savefig("cost_percolation.png")
 
-    plot(x, path_data, seriestype = :scatter, yerror = path_err, linewidth=2, legend=false)
+    plot(x, P0, linewidth=2, label=L"$P_0$", legend= :topright)
+    plot!(x, P1, linewidth=2, label=L"$P_1$")
+    plot!(x, P2, linewidth=2, label=L"$P_2$")
+    plot!(x, P3, linewidth=2, label=L"$P_3$")
     xaxis!(L"$\textrm{Probability of Edge Removal}$")
-    yaxis!(L"$\textrm{Average Number of Paths Used Per User Pair}$")
-    savefig("path_percolation.pdf")
-    savefig("path_percolation.png")
+    # savefig("path_percolation.pdf")
+    # savefig("path_percolation.png")
 end
 
 
@@ -439,9 +463,11 @@ will take between 2 to 12 hours each. Reader beware!
 """
 # Usage : (max_pairs::Int64, num_trials::Int64)
 # plot_with_userpairs(40, 100000)
+# plot_with_userpairs(20, 1000)
 
 # Usage : (perc_range::Tuple{Float64, Float64, Float64}, num_trials::Int64)
 # plot_with_percolations((0.0, 0.01, 0.7), 100000)
+# plot_with_percolations((0.0, 0.1, 0.7), 10000)
 
 # Usage : (num_trials::Int64, max_depth::Int64)
 # plot_with_timedepth(100, 30)

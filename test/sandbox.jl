@@ -1,3 +1,7 @@
+"""
+Scratch file for testing with Juno Debugger
+"""
+
 using QuNet
 using LightGraphs
 using SimpleWeightedGraphs
