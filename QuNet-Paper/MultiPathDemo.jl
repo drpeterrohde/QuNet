@@ -431,7 +431,7 @@ number of end-users, we compare the ratio of the depths of the graphs
 function temporal_bandwidth_plot(num_trials::Int64, max_pairs::Int64)
 
     grid_size = 10
-    time_depth = 2
+    time_depth = 10
 
     # Generate ixi graph and extend it in time
     G = GridNetwork(grid_size, grid_size)

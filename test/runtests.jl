@@ -22,14 +22,22 @@ using Test
 using LightGraphs
 using SimpleWeightedGraphs
 
-# Perhaps put these includes in the unit tests so I don't have to refresh.
-include("network-library/barbell.jl")
-include("network-library/simple_network.jl")
-include("network-library/simple_satnet.jl")
-include("network-library/small_square.jl")
-include("network-library/shortest_path_test.jl")
-include("network-library/smalltemp.jl")
-include("network-library/greedy_test.jl")
+include_networks = ["barbell", "simple_network", "simple_satnet",
+"small_square", "shortest_path_test", "smalltemp", "greedy_test", "bridge"]
+
+for N in include_networks
+    include("network-library/$N.jl")
+end
+
+# TODO: Redundent
+# include("network-library/barbell.jl")
+# include("network-library/simple_network.jl")
+# include("network-library/simple_satnet.jl")
+# include("network-library/small_square.jl")
+# include("network-library/shortest_path_test.jl")
+# include("network-library/smalltemp.jl")
+# include("network-library/greedy_test.jl")
+# include("network-library/bridge.jl")
 
 @testset "Network.jl" begin
     # Test: QNetwork is correctly initialised
@@ -257,8 +265,13 @@ end
     @test ne(G) == (length(Q.channels) - 2) * 2
 
     # Test: remove_shortest_path! for a TemporalGraph returning cost vector
+    # and using temporal nodes
     T = deepcopy(smalltemp)
     QuNet.add_async_nodes!(T)
+    # TODO
+    # use asynchronus nodes 1,2 -> index_correcting -> 9, 10
+    # async_src = 1 + T.nv * T.steps
+    # async_dst = 1 + T.nv * T.steps
     removed_path, removed_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
     # Test removed path is correct
     shortestpath = [(1,2)]
@@ -339,6 +352,17 @@ end
     # pathset, purpaths, pathuse_count = QuNet.greedy_multi_path!(Q, purify, userpairs)
     # @test pathuse_count[3] == 0
     # @test pathuse_count[4] == 0
+
+    # Test that Greedy_multi_path and other routing algorithms can distinguish between
+    # The asynchronous edges of a temporal graph (i.e. prefering short times over long ones)
+    Q = deepcopy(bridge)
+    T = QuNet.TemporalGraph(Q, 2)
+    QuNet.add_async_nodes!(T)
+    pathset, pur_paths, pathuse_count = QuNet.greedy_multi_path!(T, purify, [(1,5), (2,6)])
+    # Expected output: [[(1-3),(3-4),(4-5)],(2-8),(8-9),(9-10),(10-12)]
+    # println(pathset)
+
+    # Test Greedy_multi_path for
 end
 
 @testset "TemporalGraphs.jl" begin
@@ -364,22 +388,49 @@ end
     graph = T.graph["loss"]
     @test graph.weights[104, 4] == 4
 
-    # Test add_async_nodes!
-    G = GridNetwork(2, 2)
-    T = QuNet.TemporalGraph(G, 2)
-    QuNet.add_async_nodes!(T)
-    @test nv(T.graph["loss"]) == 12
-    @test T.nv == 4
+    # Test add_async_nodes! for endusers that are both temporal
+    G = deepcopy(barbell)
+    T = QuNet.TemporalGraph(G, 3)
+    async_pairs = make_user_pairs(T, 1)
+    QuNet.add_async_nodes!(T, async_pairs)
+    @test nv(T.graph["loss"]) == 8
+    @test nv(T.graph["Z"]) == 8
+    @test T.nv == 2
 
-    # Test that edges are being added that connect async nodes to temporal ones
-    src = 1
-    src += T.nv * T.steps
-    @test T.graph["loss"].weights[src, 1] == 1.0e-9
-    @test T.graph["Z"].weights[5, src] == 2.0e-9
+    # Test that async edges were added to the correct nodes and in the proper directions
+    g = T.graph["loss"]
+    # async_pairs = [(7,8)]
+    # usage: g.weights[dst, src]
+    @test g.weights[1,7] != 0 && g.weights[7,1] == 0
+    @test g.weights[2,8] == 0 && g.weights[8,2] != 0
+    @test g.weights[3,7] != 0 && g.weights[7,3] == 0
+    @test g.weights[4,8] == 0 && g.weights[8,4] != 0
+    @test g.weights[5,7] != 0 && g.weights[7,5] == 0
+    @test g.weights[6,8] == 0 && g.weights[8,6] != 0
+
+    # Test add_async_nodes! for endusers where src is fixed on the top plane and dst is asynchronus
+    G = deepcopy(barbell)
+    T = QuNet.TemporalGraph(G, 2)
+    async_pairs = make_user_pairs(T, 1, src_layer=1, dst_layer=-1)
+    println(async_pairs)
+    #async_pairs = [(1,6)]
+    QuNet.add_async_nodes!(T, async_pairs)
+    g = T.graph["Z"]
+    # Test that no async links were added to src
+    @test g.weights[1,5] == 0 && g.weights[5,1] == 0
+
+    # Test that async links were added to dst and in proper direction
+    # usage: g.weights[dst, src]
+    @test g.weights[6, 2] != 0 && g.weights[2, 6] == 0
+    @test g.weights[6, 4] != 0 && g.weights[4, 6] == 0
 
     # Test rem_async_nodes!
+    G = deepcopy(barbell)
+    T = QuNet.TemporalGraph(G, 2)
+    async_pairs = make_user_pairs(T, 1)
+    QuNet.add_async_nodes!(T, async_pairs)
     QuNet.remove_async_nodes!(T)
-    @test nv(T.graph["loss"]) == 8
+    @test nv(T.graph["loss"]) == 4
 end
 
 
@@ -388,44 +439,66 @@ end
     # TODO Test dict_err
 
     # Test make_user_pairs for QNetwork.
-    Q = GridNetwork(2,2)
+
     # NOTE: One important detail I noticed:
     # make_user_pairs ordinarily generates random user pairs. I verified this in
     # A seperate test file. Impressively, the @testset seems to fix the seed, such
     # that no matter how many times you roll the dice, you get the same outcome.
     # Convenient for unit testing, not so much for verifying randomness.
+
+    # Test make_user_pairs for a regular QNetwork
+    Q = GridNetwork(2,2)
     user_pair = make_user_pairs(Q, 2)
-    @test user_pair == [(3,4),(2,1)]
+    @test user_pair == [(4,2),(3,1)]
 
-    # Test ave_paths_used
-    pathuse_count = [5,1,2,4]
-    # Expected answer:
-    # (0*5 + 1*1 + 2*2 + 3*4) / (5 + 1 + 2 + 4) == 17/12
-    ave_pathuse = QuNet.ave_paths_used(pathuse_count)
-    @test(ave_pathuse == 17/12)
+    # Test make_user_pairs for a TemporalGraph, specifying that pairs should be asynchronus
+    G = deepcopy(barbell)
+    T = QuNet.TemporalGraph(G, 2)
+    async_pairs = QuNet.make_user_pairs(T, 1, src_layer=-1, dst_layer=-1)
+    @test async_pairs == [(5,6)]
 
-    # TODO Test net_performance
-    # Test for 1 trial of barbell network
-    # usage: (network::QNetwork, num_trials::Int64, num_pairs::Int64; max_paths=3)
-    Q = deepcopy(barbell)
-    performance, performance_err, ave_pathcounts, ave_pathcounts_err = net_performance(barbell, 1, 1)
-    # Check ave_pathcounts is correct
-    @test ave_pathcounts == [0, 1, 0, 0]
-    # Only one sample taken, so no variance in ave_pathcounts:
-    @test all(isnan(i) == true for i in ave_pathcounts_err)
+    # Test make_user_pairs for a TemporalGraph, specifying that src should be asynchronus, and dst on layer 1
+    G = deepcopy(barbell)
+    T = QuNet.TemporalGraph(G, 3)
+    lopsided_pair = QuNet.make_user_pairs(T, 1, src_layer=-1, dst_layer=1)
+    @test lopsided_pair[1][1] > T.nv * T.steps && lopsided_pair[1][2] <= T.nv
 
-    # Test net_performance for many trials of barbell network
-    Q = deepcopy(barbell)
-    performance, performance_err, ave_pathcounts, ave_pathcounts_err = net_performance(barbell, 100, 1)
-    @test ave_pathcounts == [0, 1, 0, 0]
-    # Only one path possible, so no error
-    @test ave_pathcounts_err == [0, 0, 0, 0]
+    # Test make_user_pairs for a TemporalGraph for many pairs, specifying dst should be asynchronus and src on arbitrary layer,
+    G = GridNetwork(5,5)
+    T = QuNet.TemporalGraph(G, 5)
+    lopsided_pairs = QuNet.make_user_pairs(T, 10, src_layer=3, dst_layer=-1)
+    @test all(T.nv * 2 < lopsided_pairs[i][1] <= T.nv * 3 for i in 1:10)
+    @test all(T.nv * T.steps < lopsided_pairs[i][2] for i in 1:10)
 
-    # Test net_performance for TemporalGraph
-    T = deepcopy(smalltemp)
-    QuNet.add_async_nodes!(T)
-    performance, performance_err, ave_pathcounts, ave_pathcounts_err = net_performance(T, 100, 2)
-    # Check that the average number of paths used is 2
-    @test ave_pathcounts[3] == 2.0
-    @test ave_pathcounts_err == [0.0, 0.0, 0.0, 0.0]
+    # # Test ave_paths_used
+    # pathuse_count = [5,1,2,4]
+    # # Expected answer:
+    # # (0*5 + 1*1 + 2*2 + 3*4) / (5 + 1 + 2 + 4) == 17/12
+    # ave_pathuse = QuNet.ave_paths_used(pathuse_count)
+    # @test(ave_pathuse == 17/12)
+    #
+    # # TODO Test net_performance
+    # # Test for 1 trial of barbell network
+    # # usage: (network::QNetwork, num_trials::Int64, num_pairs::Int64; max_paths=3)
+    # Q = deepcopy(barbell)
+    # performance, performance_err, ave_pathcounts, ave_pathcounts_err = net_performance(barbell, 1, 1)
+    # # Check ave_pathcounts is correct
+    # @test ave_pathcounts == [0, 1, 0, 0]
+    # # Only one sample taken, so no variance in ave_pathcounts:
+    # @test all(isnan(i) == true for i in ave_pathcounts_err)
+    #
+    # # Test net_performance for many trials of barbell network
+    # Q = deepcopy(barbell)
+    # performance, performance_err, ave_pathcounts, ave_pathcounts_err = net_performance(barbell, 100, 1)
+    # @test ave_pathcounts == [0, 1, 0, 0]
+    # # Only one path possible, so no error
+    # @test ave_pathcounts_err == [0, 0, 0, 0]
+    #
+    # # Test net_performance for TemporalGraph
+    # T = deepcopy(smalltemp)
+    # QuNet.add_async_nodes!(T)
+    # performance, performance_err, ave_pathcounts, ave_pathcounts_err = net_performance(T, 100, 2)
+    # # Check that the average number of paths used is 2
+    # @test ave_pathcounts[3] == 2.0
+    # @test ave_pathcounts_err == [0.0, 0.0, 0.0, 0.0]
 end

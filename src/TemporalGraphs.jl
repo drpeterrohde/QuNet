@@ -103,31 +103,68 @@ function TemporalGraph(network::QNetwork, steps::Int64; memory_prob::Float64=1.0
     return temp_graph
 end
 
-function add_async_nodes!(tempnet::QuNet.TemporalGraph)
-    # Minimal weight constant
-    ϵ = 1e-9
+"""
+Add asynchronus nodes to a Temporal Network.
+
+This function adds tempnet.nv nodes to the graph. If a given node is source,
+outgoing asynchronus edges are added to the node that connects it to its temporal
+counterparts. This is done with incremental timeweights ϵ so that earlier times
+are prioritized.
+
+Likewise if a node is a dest, incoming asynchronus edges are added with incremental
+weights ϵ.
+"""
+function add_async_nodes!(tempnet::QuNet.TemporalGraph, endusers::Vector{Tuple};
+    ϵ=1)
     N = tempnet.nv
     steps = tempnet.steps
+    # index offset for asynchronus nodes
+    async_offset = N*steps
+
+    # Keep track of asynchronus src and dst nodes
+    src_nodes = []
+    dst_nodes = []
+    for userpair in endusers
+        src = userpair[1]
+        dst = userpair[2]
+        if src > async_offset
+            push!(src_nodes, src)
+        end
+        if dst > async_offset
+            push!(dst_nodes, dst)
+        end
+    end
+
     for costkey in keys(zero_costvector())
         graph = tempnet.graph[costkey]
-        @assert nv(graph) == N * steps "Graph too small for number of steps given:
-        nv(graph) == $(nv(graph)) != N*steps == $(N*steps)"
         # Add the asynchronus nodes
         add_vertices!(graph, N)
-        # Keep track of indices of async nodes
-        async_idxs = collect(N*steps + 1: N*steps + N)
-        for t in 1:steps
-            # Connect each temporal node to its async counterpart
-            # Use minimal time dependent weight to prioritise top layers when routing
-            for i in 1:N
-                add_edge!(graph, i+N*(t-1), async_idxs[i], ϵ*t)
-                add_edge!(graph, async_idxs[i], i+N*(t-1), ϵ*t)
+
+        # Connect async nodes to temporal counterparts:
+        for async in (1 + async_offset):(N + async_offset)
+            # If node is a src, make asynchronus channels outgoing
+            if async in src_nodes
+                for t in 1:steps
+                    # Connect each temporal node to its async counterpart
+                    # Use time_dependent weight to prioritise top layers when routing
+                    #add_edge(src, dst)
+                    add_edge!(graph, async, async%async_offset + N*(t-1), ϵ*t)
+                end
+            # If node is a dst, make asynchronus channels incoming
+            elseif async in dst_nodes
+                for t in 1:steps
+                    add_edge!(graph, async%async_offset + N*(t-1), async, ϵ*t)
+                end
             end
         end
     end
 end
 
+"""
+Remove all asynchronus nodes of a TemporalGraph.
 
+i.e. those put in place by add_async_nodes!
+"""
 function remove_async_nodes!(tempnet::QuNet.TemporalGraph)
     N = tempnet.nv
     steps = tempnet.steps

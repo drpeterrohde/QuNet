@@ -109,15 +109,25 @@ function remove_shortest_path!(tempnet::QuNet.TemporalGraph, cost_id::String,
 
     @assert cost_id in keys(zero_costvector()) "Invalid cost"
 
-    # Check that src and dst are nodes within range(1, size-of-static-graph)
-    if (src > tempnet.nv && dst > tempnet.nv)
-    # if (src <= tempnet.nv * tempnet.steps || dst <= tempnet.nv * tempnet.steps)
-        @assert 1==0 "(src::$src) and (dst::$dst) nodes must be asynchronous"
+    # Check if src or dst nodes are asynchronus
+    async_src = false
+    async_dst = false
+
+    if src > tempnet.nv * tempnet.steps
+        async_src = true
+    end
+    if dst > tempnet.nv * tempnet.steps
+        async_dst = true
     end
 
-    # Reindex src and dst so that they point to their asynchronus counterparts
-    src += tempnet.nv * tempnet.steps
-    dst += tempnet.nv * tempnet.steps
+    # TODO: Remove this
+    #     # Check that src and dst are nodes within range(1, size-of-static-graph)
+    #     if (src > tempnet.nv && dst > tempnet.nv)
+    #     @assert 1==0 "(src::$src) and (dst::$dst) async_pair = true: nodes must be asynchronous"
+    #     # Reindex src and dst so that they point to their asynchronus counterparts
+    #     src += tempnet.nv * tempnet.steps
+    #     dst += tempnet.nv * tempnet.steps
+    # end
 
     # Find shortest path in terms of the given cost
     t = tempnet.graph[cost_id]
@@ -128,10 +138,14 @@ function remove_shortest_path!(tempnet::QuNet.TemporalGraph, cost_id::String,
         return nothing, nothing
     end
 
-    # Since path runs from asynchronus nodes,
-    # pop the path on either end so asynchronus edges aren't removed
-    popfirst!(path)
-    pop!(path)
+    # If either src or dst was asynchronus:
+    # Pop the asynchronus edge so it doesn't get removed.
+    if async_src == true
+        popfirst!(path)
+    end
+    if async_dst == true
+        pop!(path)
+    end
 
     # Find the costs associated with the path:
     path_cv = get_pathcv(tempnet, path)

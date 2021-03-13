@@ -45,12 +45,8 @@ end
 
 
 """Generate a list of user_pairs for a QNetwork"""
-function make_user_pairs(net::Union{QNetwork, QuNet.TemporalGraph}, num_pairs::Int)
-    if typeof(net) == QNetwork
-        num_nodes = length(net.nodes)
-    else
-        num_nodes = net.nv
-    end
+function make_user_pairs(net::QNetwork, num_pairs::Int)
+    num_nodes = length(net.nodes)
     @assert num_nodes >= num_pairs*2 "Graph space too small for number of pairs"
     rand_space = Array(collect(1:num_nodes))
     pairs = Vector{Tuple}()
@@ -62,6 +58,58 @@ function make_user_pairs(net::Union{QNetwork, QuNet.TemporalGraph}, num_pairs::I
         idx = rand(1:length(rand_space))
         v = rand_space[idx]
         deleteat!(rand_space, idx)
+        chosen_pair = (u, v)
+        push!(pairs, chosen_pair)
+        i += 1
+    end
+    return pairs
+end
+
+"""
+Generate a list of end-users for a TemporalGraph.
+src_layer and dst_layer specify the temporal locations of the source and dst nodes
+respectively. The default value for these is -1, which indicates the end-users should
+be asynchronus.
+"""
+function make_user_pairs(net::QuNet.TemporalGraph, num_pairs::Int;
+    src_layer::Int64=-1, dst_layer::Int64=-1)
+
+    num_nodes = net.nv
+    @assert num_nodes >= num_pairs*2 "Graph space too small for number of pairs"
+    @assert dst_layer <= net.steps "dst_layer must be between 1 and $(net.steps) -- or -1 for async nodes"
+
+    rand_space = Array(collect(1:num_nodes))
+    pairs = Vector{Tuple}()
+    i = 0
+    while i < num_pairs
+        # Random source
+        idx = rand(1:length(rand_space))
+        u = rand_space[idx]
+        deleteat!(rand_space, idx)
+
+        # Random dest
+        idx = rand(1:length(rand_space))
+        v = rand_space[idx]
+        deleteat!(rand_space, idx)
+
+        # Update u and v to point to the specified source and dest layers
+        # If src_layer == -1, index to async_nodes
+        if src_layer == -1
+            u += num_nodes * net.steps
+        elseif src_layer > 0
+            u += (src_layer - 1) * num_nodes
+        else
+            error("Invalid src_layer. Choose from {1, ..., T.steps} or -1 for asynchronus nodes")
+        end
+
+        if dst_layer == -1
+            v += num_nodes * net.steps
+        elseif dst_layer > 0
+            v += (dst_layer - 1) * num_nodes
+        else
+            error("Invalid dst_layer. Choose from {1, ..., T.steps} or -1 for asynchronus nodes")
+        end
+
         chosen_pair = (u, v)
         push!(pairs, chosen_pair)
         i += 1
