@@ -114,7 +114,7 @@ are prioritized.
 Likewise if a node is a dest, incoming asynchronus edges are added with incremental
 weights ϵ.
 """
-function add_async_nodes!(tempnet::QuNet.TemporalGraph, endusers::Vector{Tuple};
+function add_async_nodes!(tempnet::QuNet.TemporalGraph, endusers::Vector{Tuple{Int64, Int64}};
     ϵ=1)
     N = tempnet.nv
     steps = tempnet.steps

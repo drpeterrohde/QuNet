@@ -45,7 +45,7 @@ end
 
 
 """Generate a list of user_pairs for a QNetwork"""
-function make_user_pairs(net::QNetwork, num_pairs::Int)
+function make_user_pairs(net::QNetwork, num_pairs::Int)::Vector{Tuple{Int64, Int64}}
     num_nodes = length(net.nodes)
     @assert num_nodes >= num_pairs*2 "Graph space too small for number of pairs"
     rand_space = Array(collect(1:num_nodes))
@@ -72,7 +72,7 @@ respectively. The default value for these is -1, which indicates the end-users s
 be asynchronus.
 """
 function make_user_pairs(net::QuNet.TemporalGraph, num_pairs::Int;
-    src_layer::Int64=-1, dst_layer::Int64=-1)
+    src_layer::Int64=-1, dst_layer::Int64=-1)::Vector{Tuple{Int64, Int64}}
 
     num_nodes = net.nv
     @assert num_nodes >= num_pairs*2 "Graph space too small for number of pairs"
@@ -138,7 +138,8 @@ Takes a network as input and return greedy_multi_path! performance statistics fo
 random user pairs. Ensure graph is refreshed before starting.
 """
 function net_performance(network::Union{QNetwork, QuNet.TemporalGraph},
-    num_trials::Int64, num_pairs::Int64; max_paths=3)
+    num_trials::Int64, num_pairs::Int64; max_paths=3, src_layer::Int64=-1,
+    dst_layer::Int64=-1)
 
     # Sample of average routing costs between end-users
     ave_cost_data = []
@@ -147,8 +148,17 @@ function net_performance(network::Union{QNetwork, QuNet.TemporalGraph},
 
     for i in 1:num_trials
         net = deepcopy(network)
+
         # Generate random communication pairs
-        user_pairs = make_user_pairs(network, num_pairs)
+        if typeof(network) == TemporalGraph
+            user_pairs = make_user_pairs(network, num_pairs, src_layer=src_layer, dst_layer=dst_layer)
+            # Add asynchronus nodes to the network copy
+            add_async_nodes!(net, user_pairs)
+        else
+            user_pairs = make_user_pairs(network, num_pairs)
+        end
+
+        # Get data from greedy_multi_path
         dummy, routing_costs, pathuse_count = QuNet.greedy_multi_path!(net, purify, user_pairs, max_paths)
 
         # Filter out entries where no paths were found and costs are not well defined
