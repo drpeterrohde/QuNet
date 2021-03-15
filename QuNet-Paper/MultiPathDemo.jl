@@ -18,17 +18,18 @@ function plot_with_userpairs(max_pairs::Int64,
     perf_data = []
     # The associated errors of the costs sampled over num_trials
     perf_err = []
-    # Spectograms of the average number of paths used in the routing strategy, sampled over num_trials
-    # for different numbers of end-users
-    # i.e. [3,4,5]: 3 end-users found no path on average, 4 end-users found 1 path on average etc.
+    # Average numbers of paths used, sampled over num_trials for different numbers of end-users
+    # e.g. [3,4,5]: 3 end-users found no path on average, 4 end-users found 1 path on average etc.
     path_data = []
     # Associated errors of path_data
     path_err = []
 
+    grid_size = 10
+
     for i in 1:max_pairs
         println("Collecting for pairsize: $i")
-        # Generate 10x10 graph:
-        net = GridNetwork(10, 10)
+
+        net = GridNetwork(grid_size, grid_size)
 
         # Collect performance statistics
         p, p_e, pat, pat_e = net_performance(net, num_trials, i)
@@ -37,10 +38,6 @@ function plot_with_userpairs(max_pairs::Int64,
         push!(path_data, pat)
         push!(path_err, pat_e)
 
-        # collision_rate = collisions/(num_trials*i)
-        # push!(collision_data, collision_rate)
-        # push!(perf_data, performance)
-        # push!(path_data, ave_paths_used)
     end
 
     # Get values for x axis
@@ -63,11 +60,16 @@ function plot_with_userpairs(max_pairs::Int64,
     P2e = [path_err[i][3]/i for i in 1:max_pairs]
     P3e = [path_err[i][4]/i for i in 1:max_pairs]
 
-    # Save data to csv
-    # file = "userpairs.csv"
-    # writedlm(file,  ["Average number of paths used",
-    #                 path_data, "Efficiency", loss_arr,
-    #                 "Z-dephasing", z_arr], ',')
+    # Save data to txt
+    open("data/userpairs.txt", "w") do io
+        writedlm(io, ["max_pairs = $max_pairs",
+        "num_trials = $num_trials",
+        "grid_size = $grid_size",
+        "perf_data", perf_data,
+        "perf_err", perf_err,
+        "path_data", path_data,
+        "path_err", path_err])
+    end
 
     # Plot
     plot(x, loss, ylims=(0,1), seriestype = :scatter, yerror = loss_err, label=L"$\eta$",
@@ -96,8 +98,8 @@ function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, nu
     num_pairs = 3
 
     # Network to be percolated.
-    size = 10
-    net = GridNetwork(size, size)
+    grid_size = 10
+    net = GridNetwork(grid_size, grid_size)
 
     perf_data = []
     perf_err = []
@@ -128,9 +130,17 @@ function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, nu
     loss_err = collect(map(x->x["loss"], perf_err))
     z_err = collect(map(x->x["Z"], perf_err))
 
-    # # Possibly redundent here?
-    # loss_arr = replace(loss_arr, nothing=>NaN)
-    # z_arr = replace(z_arr, nothing=>NaN)
+    # Save data to txt
+    open("data/percolation.txt", "w") do io
+        writedlm(io, ["perc_range = $perc_range",
+        "num_trials = $num_trials",
+        "num_pairs = $num_pairs",
+        "grid_size = $grid_size",
+        "perf_data:", perf_data,
+        "perf_err:", perf_err,
+        "path_data:", path_data,
+        "path_err:", path_err])
+    end
 
     # Extract data from path: PX is the rate of using X paths
     P0 = [path_data[i][1]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
@@ -138,18 +148,11 @@ function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, nu
     P2 = [path_data[i][3]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
     P3 = [path_data[i][4]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
 
+    # Extract errors from path:
     P0e = [path_err[i][1]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
     P1e = [path_err[i][2]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
     P2e = [path_err[i][3]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
     P3e = [path_err[i][4]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
-
-    # Save data to csv
-    # file = "percolations.csv"
-    # writedlm(file,  ["Average number of paths used",
-    #                 path_data, "Efficiency", loss_arr,
-    #                 "Efficiency Error", loss_error,
-    #                 "Z-dephasing", z_arr,
-    #                 "Z Error", z_error], ',')
 
     # Plot
     plot(x, loss, ylims=(0,1), seriestype = :scatter, yerror = loss_err, label=L"$\eta$",
@@ -188,8 +191,6 @@ function plot_with_timedepth(num_trials::Int64, max_depth::Int64)
         G = GridNetwork(grid_size, grid_size)
         # Create a Temporal Graph from G with timedepth i
         T = QuNet.TemporalGraph(G, i)
-        # Add asynchronous nodes to the TemporalGraph
-        QuNet.add_async_nodes!(T)
         # Get random pairs of asynchronus nodes
         user_pairs = make_user_pairs(T, num_pairs)
         # Get data
@@ -207,9 +208,9 @@ function plot_with_timedepth(num_trials::Int64, max_depth::Int64)
     # f_susp = ones(length(1:max_depth)) * susp[2]
     # single-user-multi-path
     # println("Collecting data for sump")
-    sump = numerical_single_user_multi_path_cost(grid_size)
-    e_sump = ones(length(1:max_depth)) * sump[1]
-    f_sump = ones(length(1:max_depth)) * sump[2]
+    # sump = numerical_single_user_multi_path_cost(grid_size)
+    # e_sump = ones(length(1:max_depth)) * sump[1]
+    # f_sump = ones(length(1:max_depth)) * sump[2]
 
     # Get values for x axis
     x = collect(1:max_depth)
@@ -219,6 +220,18 @@ function plot_with_timedepth(num_trials::Int64, max_depth::Int64)
     z = collect(map(x->x["Z"], perf_data))
     loss_err = collect(map(x->x["loss"], perf_err))
     z_err = collect(map(x->x["Z"], perf_err))
+
+    # Save data to txt
+    open("data/temporal.txt", "w") do io
+        writedlm(io, ["max_depth = $max_depth",
+        "num_trials = $num_trials",
+        "num_pairs = $num_pairs",
+        "grid_size = $grid_size",
+        "perf_data:", perf_data,
+        "perf_err:", perf_err,
+        "path_data:", path_data,
+        "path_err:", path_err])
+    end
 
     # Extract from path data
     P0 = [path_data[i][1]/num_pairs for i in 1:max_depth]
@@ -231,21 +244,14 @@ function plot_with_timedepth(num_trials::Int64, max_depth::Int64)
     P2e = [path_err[i][3]/num_pairs for i in 1:max_depth]
     P3e = [path_err[i][4]/num_pairs for i in 1:max_depth]
 
-    # # Save data to csv
-    # file = "temporal.csv"
-    # writedlm(file,  ["Efficiency", loss_arr,
-    #                 "Efficiency Error", loss_error,
-    #                 "Z-dephasing", z_arr,
-    #                 "Z Error", z_error], ',')
-
     # Plot
     # after seriestype: marker = (5)
     plot(x, loss, ylims=(0,1), seriestype = :scatter, yerror = loss_err, label=L"$\eta$",
     legend=:bottomright)
     plot!(x, z, seriestype = :scatter, yerror = z_err, label=L"$F$")
     # Plot horizontal lines
-    plot!(x, e_sump, linestyle=:dot, color=:red, linewidth=2, label=L"$\textrm{Asymptotic single-pair } \eta$")
-    plot!(x, f_sump, linestyle=:dot, color=:green, linewidth=2, label=L"$\textrm{Asymptotic single-pair } F$")
+    # plot!(x, e_sump, linestyle=:dot, color=:red, linewidth=2, label=L"$\textrm{Asymptotic single-pair } \eta$")
+    # plot!(x, f_sump, linestyle=:dot, color=:green, linewidth=2, label=L"$\textrm{Asymptotic single-pair } F$")
     xaxis!(L"$\textrm{Time Depth of Tempral Meta-Graph}$")
 
     savefig("plots/cost_temporal.png")
@@ -301,6 +307,18 @@ function plot_with_gridsize(num_trials::Int64, num_pairs::Int64, min_size::Int64
     loss_err = collect(map(x->x["loss"], perf_err))
     z_err = collect(map(x->x["Z"], perf_err))
 
+    # Save data to txt
+    open("data/gridsize.txt", "w") do io
+        writedlm(io, ["min_size = $min_size",
+        "max_size = $max_size",
+        "num_trials = $num_trials",
+        "num_pairs = $num_pairs",
+        "perf_data:", perf_data,
+        "perf_err:", perf_err,
+        "path_data:", path_data,
+        "path_err:", path_err])
+    end
+
     # Extract from path data
     P0 = [path_data[i][1]/num_pairs for i in 1:(max_size-min_size)+1]
     P1 = [path_data[i][2]/num_pairs for i in 1:(max_size-min_size)+1]
@@ -311,12 +329,6 @@ function plot_with_gridsize(num_trials::Int64, num_pairs::Int64, min_size::Int64
     P1e = [path_err[i][2]/num_pairs for i in 1:(max_size-min_size)+1]
     P2e = [path_err[i][3]/num_pairs for i in 1:(max_size-min_size)+1]
     P3e = [path_err[i][4]/num_pairs for i in 1:(max_size-min_size)+1]
-
-    # # Save data to csv
-    # file = "gridsize.csv"
-    # writedlm(file,  ["Average number of paths used",
-    #                 path_data, "Efficiency", loss_arr,
-    #                 "Z-dephasing", z_arr], ',')
 
     # Plot
     plot(x, loss, ylims=(0,1), seriestype = :scatter, yerror = loss_err, label=L"$\eta$",
@@ -397,6 +409,17 @@ function plot_maxpaths_with_gridsize(num_trials::Int64, min_size::Int64, max_siz
     loss_arr3 = collect(map(x->x["loss"], perf_data3))
     z_arr3 = collect(map(x->x["Z"], perf_data3))
 
+    # Save data to txt
+    open("data/maxpaths.txt", "w") do io
+        writedlm(io, ["min_size = $min_size",
+        "max_size = $max_size",
+        "num_trials = $num_trials",
+        "num_pairs = 1",
+        "perf_data1:", perf_data1,
+        "perf_data2:", perf_data2,
+        "path_data3", perf_data3])
+    end
+
     # Plot
     plot(x, loss_arr1, linewidth=2, label=L"$\eta_1$", color = :red, legend=:right)
     plot!(x, z_arr1, linewidth=2, label=L"$F_1$", linestyle=:dash, color =:red)
@@ -423,70 +446,92 @@ function generate_static_plot()
     # QuNet.plot_network(temp, user_paths)
 end
 
-# Peter's suggestion:
+
 """
 Two different temporal plots, one with memory and one without. While varying the
 number of end-users, we compare the ratio of the depths of the graphs
 """
 function temporal_bandwidth_plot(num_trials::Int64, max_pairs::Int64)
 
+    """
+    Find the maximum timedepth reached by a given pathset
+    """
+    function max_timedepth(pathset, T)
+        max_depth = 1
+        for bundle in pathset
+            for path in bundle
+                edge = last(path)
+                node = edge.dst
+                # Check if node is temporal. If it is, use 2nd last node in path instead
+                if node > T.nv * T.steps
+                    node = edge.src
+                end
+                # use node - 1 here because if node % T.nv == 0, depth is off by one
+                depth = (node - 1) ÷ T.nv
+                if depth > max_depth
+                    max_depth = depth
+                end
+            end
+        end
+        return max_depth
+    end
+
     grid_size = 10
-    time_depth = 10
+    time_depth = 50
 
     # Generate ixi graph and extend it in time
     G = GridNetwork(grid_size, grid_size)
     # Extend in time with memory links:
-    T_mem = QuNet.TemporalGraph(G, time_depth)
+    T_mem = QuNet.TemporalGraph(G, time_depth, memory_costs = unit_costvector())
     # Extend in time without memory
     T = QuNet.TemporalGraph(G, time_depth, memory_prob=0.0)
-    # Add asynchronus nodes to Temporal Graphs for routing
-    QuNet.add_async_nodes!(T_mem)
-    QuNet.add_async_nodes!(T)
 
     plot_data = []
+    error_data = []
     for i in 1:max_pairs
         println("Collecting for pairs : $i")
         raw_data = []
         for j in 1:num_trials
-            # Get i random userpairs
-            user_pairs = make_user_pairs(T, i)
+            # Get i random userpairs. Ensure src nodes are fixed on T=1, dst nodes are asynchronus.
+            mem_user_pairs = make_user_pairs(T, i, src_layer=1, dst_layer=-1)
+            user_pairs = make_user_pairs(T, i, src_layer=-1, dst_layer=-1)
+            # Add async nodes
+            QuNet.add_async_nodes!(T_mem, mem_user_pairs, ϵ=100)
+            QuNet.add_async_nodes!(T, user_pairs, ϵ=100)
+
+            # Make copies of the network
+            T_mem_copy = deepcopy(T_mem)
+            T_copy = deepcopy(T)
+
             # Get pathset data
-            pathset_mem, dum1, dum2 = QuNet.greedy_multi_path!(T_mem, QuNet.purify, user_pairs)
-            pathset, dum1, dum2 = QuNet.greedy_multi_path!(T, QuNet.purify, user_pairs)
+            pathset_mem, dum1, dum2 = QuNet.greedy_multi_path!(T_mem_copy, QuNet.purify, mem_user_pairs)
+            pathset, dum1, dum2 = QuNet.greedy_multi_path!(T_copy, QuNet.purify, user_pairs)
             # Pathset is an array of vectors containing edges describing paths between end-user pairs
             # Objective: find the largest timedepth used in the pathsets
 
-            function max_timedepth(pathset, T)
-                max_depth = 1
-                for bundle in pathset
-                    for path in bundle
-                        for edge in path
-                            src = edge.src; dst = edge.dst
-                            t1 = (src-1) ÷ T.nv
-                            t2 = (dst-1) ÷ T.nv
-                            if t1 > max_depth
-                                max_depth = t1
-                            elseif t2 > max_depth
-                                max_depth = t2
-                            end
-                        end
-                    end
-                end
-                return max_depth
+            # DEBUG
+            if i == 50 && j == 1
+                println("pathset_mem = $pathset_mem")
+                println("pathset = $pathset")
             end
 
             max_depth_mem = max_timedepth(pathset_mem, T)
             max_depth = max_timedepth(pathset, T)
+
+            #DEBUG
+            println("max_depth: $max_depth  max_depth_mem: $max_depth_mem")
+
             # Get the ratio of these two quantities. Add it to data array
             push!(raw_data, max_depth_mem / max_depth)
         end
         # Average the raw data, add it to plot data:
-        # TODO: Might want standard error.
         push!(plot_data, mean(raw_data))
+        # Get standard error
+        push!(error_data, std(raw_data)/sqrt(num_trials - 1))
     end
     # Plot
     x = collect(1:max_pairs)
-    plot(x, plot_data)
+    plot(x, plot_data, yerr = error_data)
 end
 
 
@@ -571,13 +616,15 @@ will take between 2 to 12 hours each. Reader beware!
 """
 # Usage : (max_pairs::Int64, num_trials::Int64)
 # plot_with_userpairs(50, 2000)
+# plot_with_userpairs(50, 100)
 
 # Usage : (perc_range::Tuple{Float64, Float64, Float64}, num_trials::Int64)
 # ETA 7 hours
 # plot_with_percolations((0.0, 0.01, 0.7), 200000)
+# plot_with_percolations((0.0, 0.01, 0.7), 1000)
 
 # Usage : (num_trials::Int64, max_depth::Int64)
-# plot_with_timedepth(100, 15)
+# plot_with_timedepth(10, 15)
 
 # Usage : (num_trials::Int64, num_pairs::Int64, min_size::Int64, max_size::Int64)
 # plot_with_gridsize(100, 40, 10, 150)
@@ -588,7 +635,7 @@ will take between 2 to 12 hours each. Reader beware!
 # plot_maxpaths_with_gridsize(100, 10, 30)
 
 # Usage : (num_trials::Int64, max_pairs::Int64)
-temporal_bandwidth_plot(1000, 50)
+temporal_bandwidth_plot(20, 50)
 
 # Usage : None
 # generate_static_plot()

@@ -6,81 +6,78 @@ using QuNet
 using LightGraphs
 using SimpleWeightedGraphs
 
-# Test add_async_nodes!
-G = deepcopy(barbell)
-T = QuNet.TemporalGraph(G, 3)
-async_pairs = make_user_pairs(T, 1)
-QuNet.add_async_nodes!(T, async_pairs)
+"""
+Two different temporal plots, one with memory and one without. While varying the
+number of end-users, we compare the ratio of the depths of the graphs
+"""
+function temporal_bandwidth_plot(num_trials::Int64, max_pairs::Int64)
 
-# @test g.weights[2,8] == 0 && g.weights[8,2] != 0
+    grid_size = 3
+    time_depth = 3
 
+    # Generate ixi graph and extend it in time
+    G = GridNetwork(grid_size, grid_size)
+    # Extend in time with memory links:
+    T_mem = QuNet.TemporalGraph(G, time_depth, memory_costs = unit_costvector())
+    # Extend in time without memory
+    T = QuNet.TemporalGraph(G, time_depth, memory_prob=0.0)
 
-# include("network-library/smalltemp.jl")
-# # Test: remove_shortest_path! for a TemporalGraph returning cost vector
-# # and using temporal nodes
-# T = deepcopy(smalltemp)
-# QuNet.add_async_nodes!(T)
-# # TODO
-# # use asynchronus nodes 1,2 -> index_correcting -> 9, 10
-# # async_src = 1 + T.nv * T.steps
-# # async_dst = 1 + T.nv * T.steps
-# removed_path, removed_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
-# # Test removed path is correct
-# shortestpath = [(1,2)]
-# shortestpath = QuNet.int_to_simpleedge(shortestpath)
-# @assert(shortestpath == removed_path)
-# # Test removed path cost vectors is correct.
-# @assert removed_cv["loss"] == 1 && removed_cv["Z"] == 1
-#
-# # Remove shortest path again, and test that the path in the next temporal layer was removed
-# removed_path, removed_cv = QuNet.remove_shortest_path!(T, "loss", 1, 2)
-# shortestpath = [(5,6)]
-# shortestpath = QuNet.int_to_simpleedge(shortestpath)
-# @assert(shortestpath == removed_path)
+    plot_data = []
+    error_data = []
+    for i in 1:max_pairs
+        println("Collecting for pairs : $i")
+        raw_data = []
+        for j in 1:num_trials
+            # Get i random userpairs. Ensure src nodes are fixed on T=1, dst nodes are asynchronus.
+            mem_user_pairs = make_user_pairs(T, i, src_layer=1, dst_layer=-1)
+            user_pairs = make_user_pairs(T, i, src_layer=-1, dst_layer=-1)
+            # Add async nodes
+            QuNet.add_async_nodes!(T_mem, mem_user_pairs, ϵ=100)
+            QuNet.add_async_nodes!(T, user_pairs, ϵ=100)
+            # Get pathset data
+            pathset_mem, dum1, dum2 = QuNet.greedy_multi_path!(T_mem, QuNet.purify, mem_user_pairs)
+            pathset, dum1, dum2 = QuNet.greedy_multi_path!(T, QuNet.purify, user_pairs)
+            # Pathset is an array of vectors containing edges describing paths between end-user pairs
+            # Objective: find the largest timedepth used in the pathsets
 
+            # DEBUG
+            if i = 50 && j == 1
+                println("pathset_mem = $pathset_mem")
+                println("pathset = $pathset")
 
-# NOTE Test max_timedepth
-# grid_size = 6
-# time_depth = 500
-# num_pairs = 16
-#
-# G = GridNetwork(grid_size, grid_size)
-# T = QuNet.TemporalGraph(G, time_depth, memory_costs = unit_costvector())
-# QuNet.add_async_nodes!(T)
-# user_pairs = make_user_pairs(T, num_pairs)
-#
-# T_flat = QuNet.TemporalGraph(G, time_depth, memory_prob=0.0)
-# QuNet.add_async_nodes!(T_flat)
-#
-# function max_timedepth(pathset, T)
-#     max_depth = 1
-#     for bundle in pathset
-#         for path in bundle
-#             for edge in path
-#                 src = edge.src; dst = edge.dst
-#                 t1 = (src-1) ÷ T.nv
-#                 t2 = (dst-1) ÷ T.nv
-#                 if t1 > max_depth
-#                     max_depth = t1
-#                 elseif t2 > max_depth
-#                     max_depth = t2
-#                 end
-#             end
-#         end
-#     end
-#     return max_depth
-# end
-#
-# pathset, dum1, dum2 = QuNet.greedy_multi_path!(T, QuNet.purify, user_pairs)
-# pathset_flat, dum1, dum2 = QuNet.greedy_multi_path!(T_flat, QuNet.purify, user_pairs)
-# max_depth = max_timedepth(pathset, T)
-# max_depth_flat = max_timedepth(pathset, T_flat)
-#
-# flush(stdout)
-# # println(pathset)
-# # println(pathset_flat)
-#
-# println(length(pathset[4]))
-#
-# println(max_depth)
-# println(max_depth_flat)
+            """
+            Find the maximum timedepth reached by a given pathset
+            """
+            function max_timedepth(pathset, T)
+                max_depth = 1
+                for bundle in pathset
+                    for path in bundle
+                        edge = last(path)
+                        node = edge.dst
+                        # Check if node is temporal. If it is, use src instead
+                        if node > T.nv * T.steps
+                            node = edge.src
+                        end
+                        # use node - 1 here because if node % T.nv == 0, depth is off by one
+                        depth = (node - 1) ÷ T.nv
+                        if depth > max_depth
+                            max_depth = depth
+                        end
+                    end
+                end
+                return max_depth
+            end
+
+            max_depth_mem = max_timedepth(pathset_mem, T)
+            max_depth = max_timedepth(pathset, T)
+            # Get the ratio of these two quantities. Add it to data array
+            push!(raw_data, max_depth_mem / max_depth)
+        end
+        # Average the raw data, add it to plot data:
+        push!(plot_data, mean(raw_data))
+        # Get standard error
+        push!(error_data, std(raw_data)/sqrt(num_trials - 1))
+    end
+end
+
+temporal_bandwidth_plot(5, 1)
