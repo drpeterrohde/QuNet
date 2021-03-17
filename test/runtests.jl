@@ -324,7 +324,7 @@ end
     end
     @test new_pathset == all_paths
 
-    #Test: greedy_multi_path on a TemporalGraph with 2 asynchronus end-users
+    # Test: greedy_multi_path on a TemporalGraph with 2 asynchronus end-users
     T = deepcopy(smalltemp)
     offset = smalltemp.nv * smalltemp.steps
     src1 = 1 + offset
@@ -335,9 +335,17 @@ end
     pathset, pur_paths, pathuse_count = QuNet.greedy_multi_path!(T, purify, [(src1, dst1), (src2, dst2)])
     # Test that 2 edge-disjoint paths were found for each usepair
     @test(pathuse_count[3] == 2)
+    # Test that the pathsets have the same destinations
+    for bundle in pathset
+        dsts = []
+        for path in bundle
+            push!(dsts, last(path).dst)
+        end
+        @test(all(i == dsts[1] for i in dsts))
+    end
 
-    # Test: A grid lattice completely saturated with end-users has no purification
-    # i.e. no end-user used 2 or more paths
+    # # Test: A grid lattice completely saturated with end-users has no purification
+    # # i.e. no end-user used 2 or more paths
     # NOTE: I actually proved myself wrong on this one. Purification of 2 and even 3
     # Paths is possible depending on the choice of userpair. Will leave the code here
     # As proof:
@@ -347,14 +355,14 @@ end
     # @test pathuse_count[3] == 0
     # @test pathuse_count[4] == 0
 
-    # Test that Greedy_multi_path and other routing algorithms can distinguish between
-    # The asynchronous edges of a temporal graph (i.e. prefering short times over long ones)
-    Q = deepcopy(bridge)
-    T = QuNet.TemporalGraph(Q, 2)
-    # Make asynchronus userpairs
-    QuNet.add_async_nodes!(T, [(13,17), (14,18)])
-    pathset, pur_paths, pathuse_count = QuNet.greedy_multi_path!(T, purify, [(13,17), (14,18)])
-    # Expected output: [[(1-3),(3-4),(4-5)],(2-8),(8-9),(9-10),(10-12)]
+    # # Test that Greedy_multi_path and other routing algorithms can distinguish between
+    # # The asynchronous edges of a temporal graph (i.e. prefering short times over long ones)
+    # Q = deepcopy(bridge)
+    # T = QuNet.TemporalGraph(Q, 2)
+    # # Make asynchronus userpairs
+    # QuNet.add_async_nodes!(T, [(13,17), (14,18)])
+    # pathset, pur_paths, pathuse_count = QuNet.greedy_multi_path!(T, purify, [(13,17), (14,18)])
+    # # Expected output: [[(1-3),(3-4),(4-5)],(2-8),(8-9),(9-10),(10-12)]
     # println(pathset)
 end
 
@@ -385,11 +393,16 @@ end
     # Test add_async_nodes! for endusers that are both temporal
     G = deepcopy(barbell)
     T = QuNet.TemporalGraph(G, 3)
-    async_pairs = make_user_pairs(T, 1)
+    @test T.has_async_nodes == false
+    async_pairs = [(7,8)]
     QuNet.add_async_nodes!(T, async_pairs)
     @test nv(T.graph["loss"]) == 8
     @test nv(T.graph["Z"]) == 8
     @test T.nv == 2
+    @test T.has_async_nodes == true
+
+    # Test add_async_nodes! won't let you double dip. Uncomment for good warning
+    # QuNet.add_async_nodes!(T, async_pairs)
 
     # Test that async edges were added to the correct nodes and in the proper directions
     g = T.graph["loss"]
@@ -405,26 +418,72 @@ end
     # Test add_async_nodes! for endusers where src is fixed on the top plane and dst is asynchronus
     G = deepcopy(barbell)
     T = QuNet.TemporalGraph(G, 2)
-    async_pairs = make_user_pairs(T, 1, src_layer=1, dst_layer=-1)
-    println(async_pairs)
-    #async_pairs = [(1,6)]
+    async_pairs = [(1, 6)]
     QuNet.add_async_nodes!(T, async_pairs)
     g = T.graph["Z"]
     # Test that no async links were added to src
     @test g.weights[1,5] == 0 && g.weights[5,1] == 0
 
-    # Test that async links were added to dst and in proper direction
-    # usage: g.weights[dst, src]
+    # # Test that async links were added to dst and in proper direction
+    # # usage: g.weights[dst, src]
     @test g.weights[6, 2] != 0 && g.weights[2, 6] == 0
     @test g.weights[6, 4] != 0 && g.weights[4, 6] == 0
 
-    # Test rem_async_nodes!
+    # Test remove_async_nodes!
     G = deepcopy(barbell)
     T = QuNet.TemporalGraph(G, 2)
     async_pairs = make_user_pairs(T, 1)
     QuNet.add_async_nodes!(T, async_pairs)
     QuNet.remove_async_nodes!(T)
     @test nv(T.graph["loss"]) == 4
+    @test T.has_async_nodes == false
+
+    # Test that remove_async_nodes! won't let you double dip
+    # uncomment for a useful warning
+    # QuNet.remove_async_nodes!(T)
+
+    # Test fix async_nodes_in_time
+    Q = deepcopy(barbell)
+    depth = 5
+    T = QuNet.TemporalGraph(Q, depth)
+    src = 1 + 2*depth
+    dst = 2 + 2*depth
+    user_pairs = [(src, dst)]
+    QuNet.add_async_nodes!(T, user_pairs)
+    # Fix the third node
+    QuNet.fix_async_nodes_in_time!(T, [3])
+
+    g = T.graph["loss"]
+    users = filter(isodd, 1:depth)
+    for user in users
+        if user == 3
+            @test has_edge(g, src, user) == true
+        else
+            @test has_edge(g, src, user) == false
+        end
+    end
+
+    # TODO: Not working
+    # # Test remove_async_edges! for specific time layers
+    # Q = deepcopy(barbell)
+    # T = QuNet.TemporalGraph(Q, 5)
+    # user_pairs = [(11, 12)]
+    # QuNet.add_async_nodes!(T, user_pairs)
+    # QuNet.remove_async_edges!(T, 3)
+    # # Async_edges should have been removed at t = 3
+    # g = T.graph["loss"]
+    # src = 11; dst = 12
+    # #usage g.weights[dst, src]
+    # @test g.weights[1, src] != 0
+    # @test g.weights[3, src] != 0
+    # @test g.weights[5, src] == 0
+    # @test g.weights[7, src] != 0
+
+    # @test(has_path(g, src, 1) == true)
+    # @test(has_path(g, src, 3) == true)
+    # @test(has_path(g, src, 5) == false)
+    # @test(has_path(g, src, 7) == true)
+
 end
 
 

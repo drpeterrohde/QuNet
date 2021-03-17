@@ -178,6 +178,19 @@ of the graph
 """
 function plot_with_timedepth(num_trials::Int64, max_depth::Int64)
 
+    """
+    For a given grid size, this function runs the greedy_multi_path routing algorithm
+    on randomly placed end-user pairs.
+    """
+    function asymptotic_costs(gridsize::Int64)
+        N = 10000
+        G = GridNetwork(gridsize, gridsize)
+        p, dum1, dum2, dum3 = net_performance(G, N, 1)
+        return p["loss"], p["Z"]
+    end
+
+    # BEGIN MAIN
+
     num_pairs = 40
     grid_size = 10
 
@@ -190,7 +203,7 @@ function plot_with_timedepth(num_trials::Int64, max_depth::Int64)
         println("Collecting for time depth $i")
         G = GridNetwork(grid_size, grid_size)
         # Create a Temporal Graph from G with timedepth i
-        T = QuNet.TemporalGraph(G, i)
+        T = QuNet.TemporalGraph(G, i, memory_costs = unit_costvector())
         # Get random pairs of asynchronus nodes
         user_pairs = make_user_pairs(T, num_pairs)
         # Get data
@@ -202,15 +215,10 @@ function plot_with_timedepth(num_trials::Int64, max_depth::Int64)
     end
 
     # Collect data for horizontal lines:
-    # single-user-single-path
-    # susp = analytic_single_user_single_path_cost(grid_size)
-    # e_susp = ones(length(1:max_depth)) * susp[1]
-    # f_susp = ones(length(1:max_depth)) * susp[2]
-    # single-user-multi-path
-    # println("Collecting data for sump")
-    # sump = numerical_single_user_multi_path_cost(grid_size)
-    # e_sump = ones(length(1:max_depth)) * sump[1]
-    # f_sump = ones(length(1:max_depth)) * sump[2]
+    println("Collecting data for asymptote")
+    as = numerical_single_user_multi_path_cost(grid_size)
+    e_as = ones(length(1:max_depth)) * as[1]
+    f_as = ones(length(1:max_depth)) * as[2]
 
     # Get values for x axis
     x = collect(1:max_depth)
@@ -249,9 +257,10 @@ function plot_with_timedepth(num_trials::Int64, max_depth::Int64)
     plot(x, loss, ylims=(0,1), seriestype = :scatter, yerror = loss_err, label=L"$\eta$",
     legend=:bottomright)
     plot!(x, z, seriestype = :scatter, yerror = z_err, label=L"$F$")
-    # Plot horizontal lines
-    # plot!(x, e_sump, linestyle=:dot, color=:red, linewidth=2, label=L"$\textrm{Asymptotic single-pair } \eta$")
-    # plot!(x, f_sump, linestyle=:dot, color=:green, linewidth=2, label=L"$\textrm{Asymptotic single-pair } F$")
+
+    # Plot asymptote
+    plot!(x, e_as, linestyle=:dot, color=:red, linewidth=2, label=L"$\textrm{Asymptotic single-pair } \eta$")
+    plot!(x, f_as, linestyle=:dot, color=:green, linewidth=2, label=L"$\textrm{Asymptotic single-pair } F$")
     xaxis!(L"$\textrm{Time Depth of Tempral Meta-Graph}$")
 
     savefig("plots/cost_temporal.png")
@@ -265,10 +274,6 @@ function plot_with_timedepth(num_trials::Int64, max_depth::Int64)
 
     savefig("plots/path_temporal.png")
     savefig("plots/path_temporal.pdf")
-
-    # Plot horizontal lines
-    # plot!(x, e_susp, linestyle=:dash, color=:red, label=L"$\textrm{Average path } \eta$")
-    # plot!(x, f_susp, linestyle=:dash, color=:green, label=L"$\textrm{Average path } F$")
 end
 
 
@@ -345,30 +350,6 @@ function plot_with_gridsize(num_trials::Int64, num_pairs::Int64, min_size::Int64
     xaxis!(L"$\textrm{Grid Size}$")
     savefig("plots/path_gridsize.png")
     savefig("plots/path_gridsize.pdf")
-end
-
-"""
-For a given grid size, this function calculates the average manhattan distance
-between two random points, then (assuming the channels have unit cost) returns
-the average efficiency and fidelity
-"""
-function analytic_single_user_single_path_cost(gridsize::Int64)
-    man_dist = 2/3*(gridsize + 1)
-    e = dB_to_P(man_dist)
-    f = dB_to_Z(man_dist)
-    return(e, f)
-end
-
-
-"""
-For a given grid size, this function runs the greedy_multi_path routing algorithm
-on randomly placed end-user pairs.
-"""
-function numerical_single_user_multi_path_cost(gridsize::Int64)
-    N = 10000
-    G = GridNetwork(gridsize, gridsize)
-    p, dum1, dum2, dum3 = net_performance(G, N, 1)
-    return p["loss"], p["Z"]
 end
 
 
@@ -453,29 +434,6 @@ number of end-users, we compare the ratio of the depths of the graphs
 """
 function temporal_bandwidth_plot(num_trials::Int64, max_pairs::Int64)
 
-    """
-    Find the maximum timedepth reached by a given pathset
-    """
-    function max_timedepth(pathset, T)
-        max_depth = 1
-        for bundle in pathset
-            for path in bundle
-                edge = last(path)
-                node = edge.dst
-                # Check if node is temporal. If it is, use 2nd last node in path instead
-                if node > T.nv * T.steps
-                    node = edge.src
-                end
-                # use node - 1 here because if node % T.nv == 0, depth is off by one
-                depth = (node - 1) ÷ T.nv
-                if depth > max_depth
-                    max_depth = depth
-                end
-            end
-        end
-        return max_depth
-    end
-
     grid_size = 10
     time_depth = 50
 
@@ -495,13 +453,14 @@ function temporal_bandwidth_plot(num_trials::Int64, max_pairs::Int64)
             # Get i random userpairs. Ensure src nodes are fixed on T=1, dst nodes are asynchronus.
             mem_user_pairs = make_user_pairs(T, i, src_layer=1, dst_layer=-1)
             user_pairs = make_user_pairs(T, i, src_layer=-1, dst_layer=-1)
-            # Add async nodes
-            QuNet.add_async_nodes!(T_mem, mem_user_pairs, ϵ=100)
-            QuNet.add_async_nodes!(T, user_pairs, ϵ=100)
 
             # Make copies of the network
             T_mem_copy = deepcopy(T_mem)
             T_copy = deepcopy(T)
+
+            # Add async nodes
+            QuNet.add_async_nodes!(T_mem_copy, mem_user_pairs, ϵ=100)
+            QuNet.add_async_nodes!(T_copy, user_pairs, ϵ=100)
 
             # Get pathset data
             pathset_mem, dum1, dum2 = QuNet.greedy_multi_path!(T_mem_copy, QuNet.purify, mem_user_pairs)
@@ -509,20 +468,14 @@ function temporal_bandwidth_plot(num_trials::Int64, max_pairs::Int64)
             # Pathset is an array of vectors containing edges describing paths between end-user pairs
             # Objective: find the largest timedepth used in the pathsets
 
-            # DEBUG
-            if i == 50 && j == 1
-                println("pathset_mem = $pathset_mem")
-                println("pathset = $pathset")
-            end
-
-            max_depth_mem = max_timedepth(pathset_mem, T)
-            max_depth = max_timedepth(pathset, T)
+            max_depth_mem = QuNet.max_timedepth(pathset_mem, T)
+            max_depth = QuNet.max_timedepth(pathset, T)
 
             #DEBUG
             println("max_depth: $max_depth  max_depth_mem: $max_depth_mem")
 
             # Get the ratio of these two quantities. Add it to data array
-            push!(raw_data, max_depth_mem / max_depth)
+            push!(raw_data, max_depth / max_depth_mem )
         end
         # Average the raw data, add it to plot data:
         push!(plot_data, mean(raw_data))
@@ -531,6 +484,64 @@ function temporal_bandwidth_plot(num_trials::Int64, max_pairs::Int64)
     end
     # Plot
     x = collect(1:max_pairs)
+    plot(x, plot_data, yerr = error_data)
+end
+
+
+function memory_bandwidth_plot(num_trials::Int64, perc_range::Tuple{Float64, Float64, Float64})
+
+    grid_size = 10
+    time_depth = 50
+    num_pairs = 40
+
+    # Generate ixi graph and extend it in time
+    G = GridNetwork(grid_size, grid_size)
+    # Extend in time without memory
+    T = QuNet.TemporalGraph(G, time_depth, memory_prob=0.0)
+
+    plot_data = []
+    error_data = []
+    for i in perc_range[1]:perc_range[2]:perc_range[3]
+        println("Collecting for memory percolation rate : $i")
+        # Extend in time with memory links:
+        T_mem = QuNet.TemporalGraph(G, time_depth, memory_prob=i, memory_costs = unit_costvector())
+        raw_data = []
+        for j in 1:num_trials
+            # Get i random userpairs. Ensure src nodes are fixed on T=1, dst nodes are asynchronus.
+            mem_user_pairs = make_user_pairs(T, num_pairs, src_layer=1, dst_layer=-1)
+            user_pairs = make_user_pairs(T, num_pairs, src_layer=-1, dst_layer=-1)
+
+            # Make copies of the network
+            T_mem_copy = deepcopy(T_mem)
+            T_copy = deepcopy(T)
+
+            # Add async nodes
+            QuNet.add_async_nodes!(T_mem_copy, mem_user_pairs, ϵ=100)
+            QuNet.add_async_nodes!(T_copy, user_pairs, ϵ=100)
+
+            # Get pathset data
+            pathset_mem, dum1, dum2 = QuNet.greedy_multi_path!(T_mem_copy, QuNet.purify, mem_user_pairs)
+            pathset, dum1, dum2 = QuNet.greedy_multi_path!(T_copy, QuNet.purify, user_pairs)
+            # Pathset is an array of vectors containing edges describing paths between end-user pairs
+            # Objective: find the largest timedepth used in the pathsets
+
+            max_depth_mem = QuNet.max_timedepth(pathset_mem, T)
+            max_depth = QuNet.max_timedepth(pathset, T)
+
+            #DEBUG
+            println("max_depth: $max_depth  max_depth_mem: $max_depth_mem")
+
+            # Get the ratio of these two quantities. Add it to data array
+            push!(raw_data, max_depth / max_depth_mem)
+        end
+
+        # Average the raw data, add it to plot data:
+        push!(plot_data, mean(raw_data))
+        # Get standard error
+        push!(error_data, std(raw_data)/sqrt(num_trials - 1))
+    end
+    # Plot
+    x = collect(perc_range[1]:perc_range[2]:perc_range[3])
     plot(x, plot_data, yerr = error_data)
 end
 
@@ -621,7 +632,7 @@ will take between 2 to 12 hours each. Reader beware!
 # Usage : (perc_range::Tuple{Float64, Float64, Float64}, num_trials::Int64)
 # ETA 7 hours
 # plot_with_percolations((0.0, 0.01, 0.7), 200000)
-# plot_with_percolations((0.0, 0.01, 0.7), 1000)
+# plot_with_percolations((0.0, 0.01, 0.7), 100)
 
 # Usage : (num_trials::Int64, max_depth::Int64)
 # plot_with_timedepth(10, 15)
@@ -635,7 +646,10 @@ will take between 2 to 12 hours each. Reader beware!
 # plot_maxpaths_with_gridsize(100, 10, 30)
 
 # Usage : (num_trials::Int64, max_pairs::Int64)
-temporal_bandwidth_plot(20, 50)
+# temporal_bandwidth_plot(10, 30)
+
+# Usage : num_trials::Int64, perc_range::Tuple{Float64, Float64, Float64}
+# memory_bandwidth_plot(10, (0.0, 0.1, 0.5))
 
 # Usage : None
 # generate_static_plot()
