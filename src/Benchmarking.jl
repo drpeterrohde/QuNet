@@ -122,7 +122,7 @@ Given a tally for the number of paths used by each end-user in a greedy_protocol
 (i.e. [3,4,2,1] meaning 3 end-users used no paths, 4, end-users used 1 path, etc.)
 This function finds the average number of paths used in the protocol.
 """
-function ave_paths_used(pathuse_count::Vector{Int})
+function ave_paths_used(pathuse_count::Vector{Float64})
     ave_pathuse = 0.0
     len = length(pathuse_count)
     for i in 1:len
