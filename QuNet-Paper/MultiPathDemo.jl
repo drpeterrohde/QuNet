@@ -141,7 +141,7 @@ rate (The probability that a given edge is removed)
 """
 function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, num_trials::Int64)
     # number of end-user pairs
-    num_pairs = 3
+    num_pairs = 1
 
     # Network to be percolated.
     grid_size = 10
@@ -156,11 +156,12 @@ function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, nu
         println("Collecting for percolation rate: $p")
 
         # Percolate the network
-        perc_net = QuNet.percolate_edges(net, p)
-        refresh_graph!(perc_net)
+        # perc_net = QuNet.percolate_edges(net, p)
+        # refresh_graph!(perc_net)
 
-        # Collect performance data with error
-        p, p_e, pat, pat_e = net_performance(perc_net, num_trials, num_pairs)
+        # Collect performance data with error, percolating the network edges
+        p, p_e, pat, pat_e = net_performance(net, num_trials, num_pairs, max_paths=4,
+        edge_perc_rate = p)
         push!(perf_data, p)
         push!(perf_err, p_e)
         push!(path_data, pat)
@@ -193,12 +194,14 @@ function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, nu
     P1 = [path_data[i][2]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
     P2 = [path_data[i][3]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
     P3 = [path_data[i][4]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
+    P4 = [path_data[i][5]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
 
     # Extract errors from path:
     P0e = [path_err[i][1]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
     P1e = [path_err[i][2]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
     P2e = [path_err[i][3]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
     P3e = [path_err[i][4]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
+    P4e = [path_err[i][5]/num_pairs for i in 1:length(perc_range[1]:perc_range[2]:perc_range[3])]
 
     # Plot
     plot(x, loss, ylims=(0,1), seriestype = :scatter, yerror = loss_err, label=L"$\eta$",
@@ -212,6 +215,7 @@ function plot_with_percolations(perc_range::Tuple{Float64, Float64, Float64}, nu
     plot!(x, P1, linewidth=2, yerr = P1e, label=L"$P_1$")
     plot!(x, P2, linewidth=2, yerr = P2e, label=L"$P_2$")
     plot!(x, P3, linewidth=2, yerr = P3e, label=L"$P_3$")
+    plot!(x, P4, linewidth=2, yerr = P3e, label=L"$P_4$")
     xaxis!(L"$\textrm{Probability of Edge Removal}$")
     savefig("plots/path_percolation.pdf")
     savefig("plots/path_percolation.png")
@@ -348,7 +352,7 @@ function plot_with_gridsize(num_trials::Int64, num_pairs::Int64, min_size::Int64
         net = GridNetwork(i, i)
 
         # Collect performance statistics
-        p, p_e, pat, pat_e = net_performance(net, num_trials, num_pairs)
+        p, p_e, pat, pat_e = net_performance(net, num_trials, num_pairs, max_paths=4)
         push!(perf_data, p)
         push!(perf_err, p_e)
         push!(path_data, pat)
@@ -381,11 +385,13 @@ function plot_with_gridsize(num_trials::Int64, num_pairs::Int64, min_size::Int64
     P1 = [path_data[i][2]/num_pairs for i in 1:(max_size-min_size)+1]
     P2 = [path_data[i][3]/num_pairs for i in 1:(max_size-min_size)+1]
     P3 = [path_data[i][4]/num_pairs for i in 1:(max_size-min_size)+1]
+    P4 = [path_data[i][5]/num_pairs for i in 1:(max_size-min_size)+1]
 
     P0e = [path_err[i][1]/num_pairs for i in 1:(max_size-min_size)+1]
     P1e = [path_err[i][2]/num_pairs for i in 1:(max_size-min_size)+1]
     P2e = [path_err[i][3]/num_pairs for i in 1:(max_size-min_size)+1]
     P3e = [path_err[i][4]/num_pairs for i in 1:(max_size-min_size)+1]
+    P4e = [path_err[i][5]/num_pairs for i in 1:(max_size-min_size)+1]
 
     # Plot
     plot(x, loss, ylims=(0,1), seriestype = :scatter, yerror = loss_err, label=L"$\eta$",
@@ -399,6 +405,7 @@ function plot_with_gridsize(num_trials::Int64, num_pairs::Int64, min_size::Int64
     plot!(x, P1, linewidth=2, yerr = P1e, label=L"$P_1$")
     plot!(x, P2, linewidth=2, yerr = P2e, label=L"$P_2$")
     plot!(x, P3, linewidth=2, yerr = P3e, label=L"$P_3$")
+    plot!(x, P4, linewidth=2, yerr = P4e, label=L"$P_4$")
     xaxis!(L"$\textrm{Grid Size}$")
     savefig("plots/path_gridsize.png")
     savefig("plots/path_gridsize.pdf")
@@ -537,9 +544,6 @@ function plot_bandwidth_ratio_with_userpairs(num_trials::Int64, max_pairs::Int64
             max_depth_mem = QuNet.max_timedepth(pathset_mem, T)
             max_depth = QuNet.max_timedepth(pathset, T)
 
-            #DEBUG
-            println("max_depth: $max_depth  max_depth_mem: $max_depth_mem")
-
             # Get the ratio of these two quantities. Add it to data array
             push!(raw_data, max_depth / max_depth_mem )
         end
@@ -574,7 +578,7 @@ end
 function plot_bandwidth_ratio_with_memory_rate(num_trials::Int64, perc_range::Tuple{Float64, Float64, Float64})
 
     grid_size = 10
-    time_depth = 50
+    time_depth = 8
     num_pairs = 50
     asynchronus_weight = 100
 
@@ -588,33 +592,30 @@ function plot_bandwidth_ratio_with_memory_rate(num_trials::Int64, perc_range::Tu
     error_data = []
     for i in perc_range[1]:perc_range[2]:perc_range[3]
         println("Collecting for memory percolation rate : $i")
-        # Extend in time with memory links:
-        T_mem = QuNet.TemporalGraph(G, time_depth, memory_prob=i, memory_costs = unit_costvector())
         raw_data = []
         for j in 1:num_trials
-            # Get i random userpairs. Ensure src nodes are fixed on T=1, dst nodes are asynchronus.
+
+            # Make a network with some probability of memory
+            T_mem = QuNet.TemporalGraph(G, time_depth, memory_prob=i, memory_costs = unit_costvector())
+            # Make a copy of the network without memory
+            T_copy = deepcopy(T)
+
+            # Get i random userpairs with asynchronus src and dst nodes.
             mem_user_pairs = make_user_pairs(T_mem, num_pairs, src_layer=-1, dst_layer=-1)
             user_pairs = make_user_pairs(T, num_pairs, src_layer=-1, dst_layer=-1)
 
-            # Make copies of the network
-            T_mem_copy = deepcopy(T_mem)
-            T_copy = deepcopy(T)
-
             # Add async nodes
-            QuNet.add_async_nodes!(T_mem_copy, mem_user_pairs, ϵ=asynchronus_weight)
+            QuNet.add_async_nodes!(T_mem, mem_user_pairs, ϵ=asynchronus_weight)
             QuNet.add_async_nodes!(T_copy, user_pairs, ϵ=asynchronus_weight)
 
             # Get pathset data
-            pathset_mem, dum1, dum2 = QuNet.greedy_multi_path!(T_mem_copy, QuNet.purify, mem_user_pairs, 1)
+            pathset_mem, dum1, dum2 = QuNet.greedy_multi_path!(T_mem, QuNet.purify, mem_user_pairs, 1)
             pathset, dum1, dum2 = QuNet.greedy_multi_path!(T_copy, QuNet.purify, user_pairs, 1)
             # Pathset is an array of vectors containing edges describing paths between end-user pairs
             # Objective: find the largest timedepth used in the pathsets
 
             max_depth_mem = QuNet.max_timedepth(pathset_mem, T_mem)
-            max_depth = QuNet.max_timedepth(pathset, T)
-
-            #DEBUG
-            println("max_depth: $max_depth  max_depth_mem: $max_depth_mem")
+            max_depth = QuNet.max_timedepth(pathset, T_copy)
 
             # Get the bandwidth of this quantity
             push!(raw_data, max_depth / max_depth_mem)
@@ -641,6 +642,7 @@ function plot_bandwidth_ratio_with_memory_rate(num_trials::Int64, perc_range::Tu
     x = collect(perc_range[1]:perc_range[2]:perc_range[3])
     plot(x, plot_data, yerr = error_data, legend = false)
     xaxis!(L"$\textrm{Proportion of Nodes with Quantum Memory}$")
+    yaxis!(L"$\textrm{R}$")
 
     savefig("plots/bandwidth_with_memory_rate.png")
     savefig("plots/bandwidth_with_memory_rate.pdf")
@@ -730,26 +732,22 @@ will take between 2 to 12 hours each. Reader beware!
 # plot_with_userpairs(50, 5000)
 
 # Usage : (perc_range::Tuple{Float64, Float64, Float64}, num_trials::Int64)
-# ETA 7 hours
-# plot_with_percolations((0.0, 0.01, 0.7), 200000)
-# plot_with_percolations((0.0, 0.01, 0.7), 100)
+# plot_with_percolations((0.0, 0.01, 0.7), 1000)
 
 # Usage : (num_trials::Int64, max_depth::Int64)
 # plot_with_timedepth(1000, 15)
 
 # Usage : (num_trials::Int64, num_pairs::Int64, min_size::Int64, max_size::Int64)
 # plot_with_gridsize(100, 40, 10, 150)
-# plot_with_gridsize(100, 40, 10, 20)
 
 # Usage : (num_trials::Int64, num_pairs::Int64, min_size::Int64, max_size::Int64)
-# plot_maxpaths_with_gridsize(10000, 10, 30)
-plot_maxpaths_with_gridsize(2000, 10, 50)
+# plot_maxpaths_with_gridsize(5000, 10, 50)
 
 # Usage : (num_trials::Int64, max_pairs::Int64)
-plot_bandwidth_ratio_with_userpairs(1000, 50)
+# plot_bandwidth_ratio_with_userpairs(1000, 50)
 
 # Usage : num_trials::Int64, perc_range::Tuple{Float64, Float64, Float64}
-# plot_bandwidth_ratio_with_memory_rate(10, (0.0, 0.1, 1.0))
+plot_bandwidth_ratio_with_memory_rate(5000, (0.0, 0.05, 1.0))
 
 # Usage : None
 # draw_network_routing()

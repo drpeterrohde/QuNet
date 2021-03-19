@@ -139,7 +139,7 @@ random user pairs. Ensure graph is refreshed before starting.
 """
 function net_performance(network::Union{QNetwork, QuNet.TemporalGraph},
     num_trials::Int64, num_pairs::Int64; max_paths=3, src_layer::Int64=-1,
-    dst_layer::Int64=-1)
+    dst_layer::Int64=-1, edge_perc_rate=0.0)
 
     # Sample of average routing costs between end-users
     ave_cost_data = []
@@ -156,6 +156,15 @@ function net_performance(network::Union{QNetwork, QuNet.TemporalGraph},
             add_async_nodes!(net, user_pairs)
         else
             user_pairs = make_user_pairs(network, num_pairs)
+        end
+
+        # Percolate edges
+        # WARNING: Edge percolation will not be consistant between temporal layers
+        # if typeof(net) = QuNet.TemporalGraph
+        if edge_perc_rate != 0.0
+            @assert 0 <= edge_perc_rate <= 1.0 "edge_perc_rate out of bounds"
+            net = QuNet.percolate_edges(net, edge_perc_rate)
+            refresh_graph!(net)
         end
 
         # Get data from greedy_multi_path
