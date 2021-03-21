@@ -2,27 +2,46 @@
 Scratch file for testing with Juno Debugger
 """
 
-using QuNet
-using LightGraphs
-using SimpleWeightedGraphs
 
-# include("network-library/smalltemp.jl")
+# Set up a Python backend before importing PyPlot
+using PyCall
+# Specify user GUI from options (:tk, :gtk3, :gtk, :qt5, :qt4, :qt, or :wx)
+# pygui(:qt)
+using PyPlot
 
-function draw_network_routing()
-    timedepth = 3
-    grid_size = 10
+# # Test PyPlot
+# # use x = linspace(0,2*pi,1000) in Julia 0.6
+# x = range(0; stop=2*pi, length=1000); y = sin.(3 * x + 4 * cos.(2 * x));
+# plot(x, y, color="red", linewidth=2.0, linestyle="--")
+# title("A sinusoidally modulated sinusoid")
+# # Display figure with Julia backend
+# display(gcf())
+# # Save as a Pdf
+# savefig("sinusoid_test.pdf")
+# #show()
 
-    # Index offset for asynchronus nodes
-    off = grid_size^2 * timedepth
-    # Choose asynchronus endusers
-    userpairs = [(1 + off, 100 + off), (50 + off, 81 + off), (87 + off, 22 + off)]
+# Try heatmap
+# Install numpy
+using PyCall
+np = pyimport("numpy")
+kde = pyimport("scipy.stats.kde")
+data = np.random.multivariate_normal([0, 0], [[1, 0.5], [0.5, 3]], 200)
+Tdata = transpose(data)
+x = Tdata[1, :]
+y = Tdata[2, :]
 
-    net = GridNetwork(grid_size, grid_size)
-    T = QuNet.TemporalGraph(net, timedepth, memory_prob=1.0)
-    QuNet.add_async_nodes!(T, userpairs)
-    T_copy = deepcopy(T)
-    user_paths, dum1, dum2 = QuNet.greedy_multi_path!(T_copy, QuNet.purify, userpairs)
-    QuNet.plot_network(T.graph["Z"], user_paths, T.locs_x, T.locs_y)
-end
+# # Evaluate a gaussian kde on a regular grid of nbins x nbins over data extents
+# k = kde.gaussian_kde(Tdata)
+# xi, yi = np.mgrid[minimum(x):maximum(x):nbins*1j, minimum(y):maximum(y):nbins*1j]
+# zi = k(np.vstack([xi.flatten(), yi.flatten()]))
 
-draw_network_routing()
+fig, axs = plt.subplots(ncols=2, nrows=1, figsize=(21, 5))
+# Everything starts with a Scatterplot
+axs[0].set_title('Scatterplot')
+axs[0].plot(x, y, 'ko')
+
+# # plot a density
+# axes[1].set_title('Calculate Gaussian KDE')
+# axes[1].pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto', cmap=plt.cm.BuGn_r)
+#
+display(gcf())

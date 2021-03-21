@@ -206,3 +206,54 @@ function net_performance(network::Union{QNetwork, QuNet.TemporalGraph},
 
     return performance, performance_err, ave_pathcounts, ave_pathcounts_err
 end
+
+
+"""
+Takes a network as input and returns greedy_multi_path! heatmap data for
+some number of user pairs. (i.e. a list of efficiency fidelity coordinates
+for all end users over all num_trials)
+"""
+function heat_data(network::Union{QNetwork, QuNet.TemporalGraph},
+    num_trials::Int64, num_pairs::Int64; max_paths=3, src_layer::Int64=-1,
+    dst_layer::Int64=-1, edge_perc_rate=0.0)
+
+    # e,f coords for all end users over all num_trials
+    coord_list = []
+
+    for i in 1:num_trials
+        net = deepcopy(network)
+
+        # Generate random communication pairs
+        if typeof(network) == TemporalGraph
+            user_pairs = make_user_pairs(network, num_pairs, src_layer=src_layer, dst_layer=dst_layer)
+            # Add asynchronus nodes to the network copy
+            add_async_nodes!(net, user_pairs)
+        else
+            user_pairs = make_user_pairs(network, num_pairs)
+        end
+
+        # Percolate edges
+        # WARNING: Edge percolation will not be consistant between temporal layers
+        # if typeof(net) = QuNet.TemporalGraph
+        if edge_perc_rate != 0.0
+            @assert 0 <= edge_perc_rate <= 1.0 "edge_perc_rate out of bounds"
+            net = QuNet.percolate_edges(net, edge_perc_rate)
+            refresh_graph!(net)
+        end
+
+        # Get data from greedy_multi_path
+        dummy, routing_costs, pathuse_count = QuNet.greedy_multi_path!(net, purify, user_pairs, max_paths)
+
+        # Filter out entries where no paths were found and costs are not well defined
+        filter!(x->x!=nothing, routing_costs)
+
+        # Put end-user costs into tuples (e, f)
+        for usercost in routing_costs
+            coord = Vector{Float64}()
+            push!(coord, usercost["loss"])
+            push!(coord, usercost["Z"])
+            push!(coord_list, coord)
+        end
+    end
+    return coord_list
+end

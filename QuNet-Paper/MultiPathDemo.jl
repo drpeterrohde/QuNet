@@ -130,6 +130,7 @@ function plot_with_userpairs(max_pairs::Int64,
 
     plot(x, avepath, linewidth=2, legend = false)
     xaxis!(L"$\textrm{Number of End User Pairs}$")
+    yaxis!(L"$\textrm{Average Number of Paths Used}$")
     savefig("plots/avepath_userpair.png")
     savefig("plots/avepath_userpair.pdf")
 end
@@ -649,18 +650,16 @@ function plot_bandwidth_ratio_with_memory_rate(num_trials::Int64, perc_range::Tu
 end
 
 
+
 # MAIN
 """
 Uncomment functions to reproduce plots from the paper / create your own
-
-Note: Reproducing plots with the default parameters (those used in the paper)
-will take between 2 to 12 hours each. Reader beware!
 """
 # Usage : (max_pairs::Int64, num_trials::Int64)
 # plot_with_userpairs(50, 5000)
 
 # Usage : (perc_range::Tuple{Float64, Float64, Float64}, num_trials::Int64)
-plot_with_percolations((0.0, 0.01, 0.7), 5000)
+# plot_with_percolations((0.0, 0.01, 0.7), 5000)
 
 # Usage : (num_trials::Int64, max_depth::Int64)
 # plot_with_timedepth(1000, 15)
