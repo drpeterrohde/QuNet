@@ -649,78 +649,6 @@ function plot_bandwidth_ratio_with_memory_rate(num_trials::Int64, perc_range::Tu
 end
 
 
-"""
-As suggested by Nathan:
-
-This plot is essentially identical to the plot_with_timedepth, except that no
-multi-path routing is allowed. As expected, the costs do not vary with timedepth,
-and seem to be in agreement with average L1 costs.
-"""
-# function plot_nomultipath_with_timedepth(num_trials::Int64, max_depth::Int64)
-#
-#     num_pairs = 40
-#     grid_size = 10
-#
-#     perf_data = []
-#     err_data = []
-#     collision_data = []
-#
-#     for i in 1:max_depth
-#         println("Collecting for time depth $i")
-#         G = GridNetwork(grid_size, grid_size)
-#         T = QuNet.TemporalGraph(G, i)
-#         QuNet.add_async_nodes!(T)
-#         # Get random pairs from G.
-#         user_pairs = make_user_pairs(G, num_pairs)
-#
-#         performance, errors, collisions = net_performance(T, num_trials, user_pairs, true, max_paths=1)
-#         collision_rate = collisions/(num_trials*num_pairs)
-#         push!(collision_data, collision_rate)
-#         push!(perf_data, performance)
-#         push!(err_data, errors)
-#     end
-#
-#     # Collect data for horizontal lines:
-#     # single-user-single-path
-#     susp = analytic_single_user_single_path_cost(grid_size)
-#     e_susp = ones(length(1:max_depth)) * susp[1]
-#     f_susp = ones(length(1:max_depth)) * susp[2]
-#
-#     # Get values for x axis
-#     x = collect(1:max_depth)
-#
-#     # Extract data from performance data
-#     loss_arr = collect(map(x->x["loss"], perf_data))
-#     z_arr = collect(map(x->x["Z"], perf_data))
-#
-#     # Extract error data
-#     loss_error = collect(map(x->x["loss"], err_data))
-#     z_error = collect(map(x->x["Z"], err_data))
-#
-#     # Plot
-#     plot(x, collision_data, seriestype = :scatter, marker = (5), ylims=(0,1), linewidth=2, label=L"$P$",
-#     legend=:topright)
-#     plot!(x, loss_arr, seriestype = :scatter, marker = (5), yerror = loss_error, label=L"$\eta$")
-#     plot!(x, z_arr, seriestype = :scatter, marker = (5), yerror = z_error, label=L"$F$")
-#
-#     # Plot horizontal lines
-#     plot!(x, e_susp, linestyle=:dash, color=:red, label=L"$\textrm{Average path } \eta$")
-#     plot!(x, f_susp, linestyle=:dash, color=:green, label=L"$\textrm{Average path } F$")
-#
-#     # DEBUG
-#     # Plot Peter's line
-#     n = 10
-#     peternum = 2n*(n^2-1)/(3*(2n^2-1))
-#     e_peter = ones(length(1:max_depth)) * dB_to_P(peternum)
-#     plot!(x, e_susp, linestyle=:dash, label=L"$\textrm{Peter's correction}$")
-#
-#
-#     xaxis!(L"$\textrm{Time Depth of Temporal Meta-Graph}$")
-#     savefig("nomultipath.pdf")
-#     savefig("nomultipath.png")
-# end
-
-
 # MAIN
 """
 Uncomment functions to reproduce plots from the paper / create your own
@@ -732,7 +660,7 @@ will take between 2 to 12 hours each. Reader beware!
 # plot_with_userpairs(50, 5000)
 
 # Usage : (perc_range::Tuple{Float64, Float64, Float64}, num_trials::Int64)
-# plot_with_percolations((0.0, 0.01, 0.7), 1000)
+plot_with_percolations((0.0, 0.01, 0.7), 5000)
 
 # Usage : (num_trials::Int64, max_depth::Int64)
 # plot_with_timedepth(1000, 15)
@@ -747,7 +675,7 @@ will take between 2 to 12 hours each. Reader beware!
 # plot_bandwidth_ratio_with_userpairs(1000, 50)
 
 # Usage : num_trials::Int64, perc_range::Tuple{Float64, Float64, Float64}
-plot_bandwidth_ratio_with_memory_rate(5000, (0.0, 0.05, 1.0))
+# plot_bandwidth_ratio_with_memory_rate(5000, (0.0, 0.05, 1.0))
 
 # Usage : None
 # draw_network_routing()
