@@ -36,12 +36,3 @@ function plot_network(graph::AbstractGraph, user_paths, locs_x, locs_y)
     # Save to pdf
     draw(PDF("plots/network_drawing.pdf", 16cm, 16cm), mygplot)
 end
-
-
-# TODO: Heatmap
-function cost_heatmap()
-    xs = [string("x", i) for i = 1:10]
-    ys = [string("y", i) for i = 1:4]
-    z = float((1:4) * reshape(1:10, 1, :))
-    heatmap(xs, ys, z, aspect_ratio = 1)
-end
