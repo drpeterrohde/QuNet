@@ -56,6 +56,11 @@ mutable struct BasicChannel <: QChannel
         return tmpchannel
     end
 
+    function BasicChannel(name::String, src::QNode, dest::QNode, edge_cost::Dict)
+        tmpchannel = new(name, edge_cost, src, dest, distance(src, dest), true, false)
+        return tmpchannel
+    end
+
     #BasicChannel(src::QNode, dest::QNode) = new("", unit_costvector(), src, dest, distance(src, dest), true, false)
     #BasicChannel(name::String, src::QNode, dest::QNode) = new(string(name), unit_costvector(), src, dest, distance(src, dest), true, false)
 end

@@ -13,76 +13,88 @@ end
 
 """
 Finds the total weight/length of a path for a given AbstractGraph.
+Not to be confused with get_pathcv(), which finds the vector of costs for a
+path in a QNetwork.
 
 !!! warning
     For whatever reason, SimpleWeightedDiGraph indexes weights with [dest, src].
     Keep in mind this path_length will likely not work if you pass in anything
     but a SimpleWeightedDiGraph.
 """
-function path_length(graph::AbstractGraph, path)::Float64
+function path_length(graph::AbstractGraph, path::Vector{Tuple{Int64, Int64}})::Float64
     dist = 0.0
     for edge in path
-        # SimpleWeightedDiGraph indexes by [src, dst]. Be careful here!
-        dist += graph.weights[edge.dst, edge.src]
+        # SimpleWeightedDiGraph indexes by [dst, src]. Be careful here!
+        dist += graph.weights[edge[2], edge[1]]
     end
     return dist
 end
 
 
-"""
-Removes the shortest path between two nodes of an abstract graph and returns
-the cost. If no path exists, return nothing
+function path_length(graph::AbstractGraph, path::Vector{LightGraphs.SimpleGraphs.SimpleEdge{Int64}})::Float64
+    dist = 0.0
+    for edge in path
+        # SimpleWeightedDiGraph indexes by [dst, src]. Be careful here!
+        dist += graph.weights[edge.dst, edge.src]
+    end
+    return dist
+end
 
-!!! warning
-    As pointed out in shortest_path, SimpleWeightedDiGraph indexes weights with
-    [dest, src]. Keep in mind this method will likely not work if you pass in
-    anything but a SimpleWeightedDiGraph
 """
-function remove_shortest_path!(graph::AbstractGraph, src::Int64, dst::Int64;
-    istemp = false)
+Removes the shortest path between two nodes of an abstract graph and returns the
+path along with its length. If no path exists, returns nothing for both.
+"""
+function remove_shortest_path!(graph::AbstractGraph, src::Int64, dst::Int64)
 
-    # Get shortest path. If no path exists, return nothing
+    # Get shortest path. If no path exists, return nothing for path and length
     path = shortest_path(graph, src, dst)
     if length(path) == 0
         return nothing
     end
 
-    # Else get the cost of the path
-    cost = path_length(graph, path)
+    path_len = path_length(graph, path)
 
-    # If path is in TemporalGraph, pop edge list so asynchronus links aren't removed
-    if istemp == true
-        popfirst!(path)
-        pop!(path)
-    end
-
-    # Hard remove the path from the graph
+    # Remove path
     for edge in path
         status = hard_rem_edge!(graph, edge.src, edge.dst)
         if status == false
             error("Failed to remove edge in path")
         end
     end
-    return cost
+
+    return path, path_len
 end
+
 
 """
 Removes the shortest path between two nodes of a QNetwork *with respect to a
-given cost* and returns the cost vector for the path.
+given cost* and returns the path with its corresponding cost vector.
 """
-function remove_shortest_path!(network::QNetwork, cost::String, src::Int64, dst::Int64)
-    @assert cost in keys(zero_costvector()) "Invalid cost"
+function remove_shortest_path!(network::QNetwork, cost_id::String, src::Int64, dst::Int64)
+    @assert cost_id in keys(zero_costvector()) "Invalid cost"
 
-    path_costs = Dict{String, Float64}()
-    for cost_type in keys(zero_costvector())
-        cost = remove_shortest_path!(network.graph[cost_type], src, dst)
-        # If cost is nothing, no path exists. Return nothing
-        if cost == nothing
-            return nothing
-        end
-        path_costs[cost_type] = cost
+    # Find shortest path in terms of the given cost
+    g = network.graph[cost_id]
+    path = shortest_path(g, src, dst)
+    # If no path exists, return nothing for path and path_cv
+    if length(path) == 0
+        return nothing, nothing
     end
-    return path_costs
+
+    # Find the costs associated with the path
+    path_cv = get_pathcv(network, path)
+
+    # Remove the path from the network graphs
+    for cost_id in keys(zero_costvector())
+        graph = network.graph[cost_id]
+        for edge in path
+            status = hard_rem_edge!(graph, edge.src, edge.dst)
+            if status == false
+                error("Failed to remove edge in path")
+            end
+        end
+    end
+    return path, path_cv
 end
 
 """
@@ -92,30 +104,63 @@ src and dst, specify them as you would if the graph were non-temporal. E.G. if
 you have a 1x2 network with 2 timesteps and you wanted to find the best path
 between the two nodes, you would specify src:1, dst:2
 """
-function remove_shortest_path!(tempnet::QuNet.TemporalGraph, cost::String,
+function remove_shortest_path!(tempnet::QuNet.TemporalGraph, cost_id::String,
     src::Int64, dst::Int64)
-    @assert cost in keys(zero_costvector()) "Invalid cost"
 
-    # Check that src and dst are nodes within range(1, size-of-static-graph)
-    if (src > tempnet.nv && dst > tempnet.nv)
-    # if (src <= tempnet.nv * tempnet.steps || dst <= tempnet.nv * tempnet.steps)
-        @assert 1==0 "(src::$src) and (dst::$dst) nodes must be asynchronous"
+    @assert cost_id in keys(zero_costvector()) "Invalid cost"
+
+    # Check if src or dst nodes are asynchronus
+    async_src = false
+    async_dst = false
+
+    if src > tempnet.nv * tempnet.steps
+        async_src = true
+    end
+    if dst > tempnet.nv * tempnet.steps
+        async_dst = true
     end
 
-    # Reindex src and dst so that they point to their asynchronus counterparts
-    src += tempnet.nv * tempnet.steps
-    dst += tempnet.nv * tempnet.steps
+    # TODO: Remove this
+    #     # Check that src and dst are nodes within range(1, size-of-static-graph)
+    #     if (src > tempnet.nv && dst > tempnet.nv)
+    #     @assert 1==0 "(src::$src) and (dst::$dst) async_pair = true: nodes must be asynchronous"
+    #     # Reindex src and dst so that they point to their asynchronus counterparts
+    #     src += tempnet.nv * tempnet.steps
+    #     dst += tempnet.nv * tempnet.steps
+    # end
 
-    path_costs = Dict{String, Float64}()
-    for cost_type in keys(zero_costvector())
-        cost = remove_shortest_path!(tempnet.graph[cost_type], src, dst, istemp=true)
-        # If cost is nothing, no path exists. Return nothing
-        if cost == nothing
-            return nothing
+    # Find shortest path in terms of the given cost
+    t = tempnet.graph[cost_id]
+    path = shortest_path(t, src, dst)
+
+    # If length(path) == 0, no path exists. Return nothing
+    if length(path) == 0
+        return nothing, nothing
+    end
+
+    # If either src or dst was asynchronus:
+    # Pop the asynchronus edge so it doesn't get removed.
+    if async_src == true
+        popfirst!(path)
+    end
+    if async_dst == true
+        pop!(path)
+    end
+
+    # Find the costs associated with the path:
+    path_cv = get_pathcv(tempnet, path)
+
+    # Remove the shortest path
+    for cost_id in keys(zero_costvector())
+        graph = tempnet.graph[cost_id]
+        for edge in path
+            status = hard_rem_edge!(graph, edge.src, edge.dst)
+            if status == false
+                error("Failed to remove edge in path")
+            end
         end
-        path_costs[cost_type] = cost
     end
-    return path_costs
+    return path, path_cv
 end
 
 """
@@ -136,40 +181,40 @@ the collision count by one, and add "nothing" to pur_paths
 function greedy_multi_path!(network::QNetwork, purification_method,
     users, maxpaths::Int64=3)
 
+    # List of paths for each userpair
+    pathset = [Vector() for i in 1:length(users)]
     # List of path costs for each userpair
     path_costs = [Vector{Dict{Any,Any}}() for i in 1:length(users)]
-    # Number of paths used for a given userpair. This will be averaged later
-    num_paths_used = []
 
     for i in 1:maxpaths
-
         for (userid, user) in enumerate(users)
-            src = user[1]
-            dst = user[2]
-
-            # Remove the shortest path (In terms of Z - dephasing) and get its associated cost vector.
-            pathcv = remove_shortest_path!(network, "Z", src, dst)
+            src = user[1]; dst = user[2]
+            # Remove the shortest path in terms of Z-dephasing and get its cost vector.
+            path, path_cv = remove_shortest_path!(network, "Z", src, dst)
             # If pathcv is nothing, no path was found.
-            if pathcv == nothing
+            if path_cv == nothing
                 break
             else
-                push!(path_costs[userid], pathcv)
+                push!(pathset[userid], path)
+                push!(path_costs[userid], path_cv)
             end
         end
     end
 
-    # Purify each path set, checking for collisions
-    collisions = 0
-    # Vector{Dict{Any, Any}}()
+    # A tally of the number of paths each end-user purifies together.
+    pathuse_count = [0 for i in 0:maxpaths]
+    # An array of purified cost vectors for each end-user.
     pur_paths = []
 
+    # Purify end-user paths
     for userpaths in path_costs
-        push!(num_paths_used, length(userpaths))
-        # If length(userpaths) == 0, no paths were found. No purification possible.
-        if length(userpaths) == 0
-            collisions += 1
+        # Increment the tally for the number of paths beting purified
+        len = length(userpaths)
+        pathuse_count[len + 1] += 1
+        # If len == 0, no paths were found between the end-user.
+        if len == 0
             push!(pur_paths, nothing)
-        # Otherwise, purify.
+        # Otherwise, purify the paths
         else
             purcost::Dict{Any, Any} = purification_method(userpaths)
             # Convert purcost from decibels to metric form
@@ -177,96 +222,98 @@ function greedy_multi_path!(network::QNetwork, purification_method,
             push!(pur_paths, purcost)
         end
     end
-
-    # Find the average number of paths used:
-    ave_paths_used = mean(num_paths_used)
-
-    return pur_paths, collisions, ave_paths_used
+    return pathset, pur_paths, pathuse_count
 end
 
 
-function greedy_multi_path!(tempnet::QuNet.TemporalGraph, purification_method,
+function greedy_multi_path!(network::QuNet.TemporalGraph, purification_method,
     users, maxpaths::Int64=3)
 
-    # List of path costs for each userpair, where top-level index is userpair.
-    # v = Vector{Dict{Any, Any}}()
-    # path_costs = fill(v, length(users))
+    # For TemporalGraph, paths must arrive at identical time_depth
+    # route_layer_known is false until first path is routed.
+    route_layer_known = false
+
+    # List of paths for each userpair
+    pathset = [Vector() for i in 1:length(users)]
+    # List of path costs for each userpair
     path_costs = [Vector{Dict{Any,Any}}() for i in 1:length(users)]
 
     for i in 1:maxpaths
-
         for (userid, user) in enumerate(users)
-            src = user[1]
-            dst = user[2]
-
-            # Remove the shortest path (In terms of dephasing)
-            pathcv = remove_shortest_path!(tempnet, "Z", src, dst)
+            src = user[1]; dst = user[2]
+            # Remove the shortest path in terms of Z-dephasing and get its cost vector.
+            path, path_cv = remove_shortest_path!(network, "Z", src, dst)
             # If pathcv is nothing, no path was found.
-            if pathcv == nothing
+            if path_cv == nothing
                 break
             else
-                push!(path_costs[userid], pathcv)
+                push!(pathset[userid], path)
+                push!(path_costs[userid], path_cv)
             end
-        end
-    end
 
-    # Purify each path set, checking for collisions
-    collisions = 0
-    # Vector{Dict{Any, Any}}()
-    pur_paths = []
-
-    for userpaths in path_costs
-        # If length(userpaths) == 0, no paths were found. No purification possible.
-        if length(userpaths) == 0
-            collisions += 1
-            push!(pur_paths, nothing)
-        # Otherwise, purify.
-        else
-            purcost::Dict{Any, Any} = purification_method(userpaths)
-            # Convert purcost from decibels to metric form
-            purcost = convert_costs(purcost)
-            push!(pur_paths, purcost)
-        end
-    end
-    return pur_paths, collisions
-end
-
-
-"""
-greedy_multi_pathset! is an entanglement routing strategy for a quantum network
-with n end user pairs. It is identical to greedy_multi_path!, the only difference
-being that this function returns the set of userpaths. (i.e. the list of paths selected
-for each end-user pair) Refer to greedy_multi_path! documentation for more info.
-"""
-function greedy_multi_pathset!(tempnet::QuNet.TemporalGraph, purification_method,
-    users, maxpaths::Int64=3)
-
-    path_set = [Vector() for i in 1:length(users)]
-
-    for i in 1:maxpaths
-
-        for (userid, user) in enumerate(users)
-            src = user[1]
-            dst = user[2]
-
-            # Get the shortest path (In terms of dephasing)
-            path = shortest_path(tempnet.graph["Z"], src, dst)
-
-            # Hard remove the path from the graph
-            for edge in path
-                status = hard_rem_edge!(tempnet.graph["Z"], edge.src, edge.dst)
-                if status == false
-                    error("Failed to remove edge in path")
+            # If we found a path, and we haven't fixed a routing time:
+            if path_cv != nothing && route_layer_known == false
+                route_layer_known = true
+                last_edge = last(path)
+                # If last node of the path is asynchronus:
+                    # Remove all async edges except for the one at T = depth
+                    # This means all future paths will have to route to the same time
+                if last_edge.dst > network.nv * network.steps
+                    node = last_edge.src
+                    depth = QuNet.node_timedepth(T.nv, T.steps, node)
+                    # Remove all asynchronus edges except for that depth
+                    QuNet.fix_async_nodes_in_time(T, [node])
                 end
             end
 
-            # If pathcv is nothing, no path was found.
-            if path == nothing
-                break
-            else
-                push!(path_set[userid], path)
+
+        end
+    end
+
+    # A tally of the number of paths each end-user purifies together.
+    pathuse_count = [0 for i in 0:maxpaths]
+    # An array of purified cost vectors for each end-user.
+    pur_paths = []
+
+    # Purify end-user paths
+    for userpaths in path_costs
+        # Increment the tally for the number of paths beting purified
+        len = length(userpaths)
+        pathuse_count[len + 1] += 1
+        # If len == 0, no paths were found between the end-user.
+        if len == 0
+            push!(pur_paths, nothing)
+        # Otherwise, purify the paths
+        else
+            purcost::Dict{Any, Any} = purification_method(userpaths)
+            # Convert purcost from decibels to metric form
+            purcost = convert_costs(purcost)
+            push!(pur_paths, purcost)
+        end
+    end
+    return pathset, pur_paths, pathuse_count
+end
+
+
+"""
+Find the maximum timedepth reached by a given pathset
+"""
+function max_timedepth(pathset, T)
+    max_depth = 1
+    for bundle in pathset
+        for path in bundle
+            edge = last(path)
+            node = edge.dst
+            # Check if node is temporal. If it is, use 2nd last node in path instead
+            if node > T.nv * T.steps
+                node = edge.src
+            end
+            # use node - 1 here because if node % T.nv == 0, depth is off by one
+            depth = QuNet.node_timedepth(T.nv, T.steps, node)
+            if depth > max_depth
+                max_depth = depth
             end
         end
     end
-    return path_set
+    return max_depth
 end

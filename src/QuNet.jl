@@ -2,7 +2,7 @@ __precompile__(true)
 
 module QuNet
 
-# TODO: Update what we should be using vs importing. Be discriminating!.
+# TODO: Update what we should be using vs importing. Be discriminating!
 using LightGraphs, SimpleWeightedGraphs, GraphPlot, MetaGraphs
 using LinearAlgebra, StatsBase, Statistics
 using Documenter, Colors, Plots, LaTeXStrings
@@ -22,11 +22,13 @@ abstract type QChannel <: QObject end
 
 TIME_STEP = 0.01
 
+# WARNING The order of these is fairly important.
+# Don't change them willy-nilly unless you like segfaults and screaming
 include("Network.jl")
+include("TemporalGraphs.jl")
 include("CostVector.jl")
 include("Node.jl")
 include("Channel.jl")
-include("TemporalGraphs.jl")
 include("Percolation.jl")
 include("Routing.jl")
 include("Plot.jl")
@@ -35,6 +37,7 @@ include("Benchmarking.jl")
 include("GraphInterface.jl")
 
 export
+# Abstract Classes
 QObject, QNode, QChannel,
 
 # Benchmarking.jl
@@ -44,7 +47,7 @@ percolation_bench, dict_average, dict_err, make_user_pairs, net_performance,
 BasicChannel, AirChannel,
 
 # CostVector.jl
-zero_costvector, unit_costvector, convert_costs, get_pathcost,
+zero_costvector, unit_costvector, convert_costs, get_pathcv,
 
 # Network.jl
 QNetwork, GridNetwork, add, update,

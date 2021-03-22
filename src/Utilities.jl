@@ -50,7 +50,6 @@ function purify_CNOT(F1::Float64,F2::Float64)::(Float64,Float64)
     return (F,P)
 end
 
-
 """
 Probabilistic purification scheme used in greedy_multi_path!
 Takes a list of cost vectors (dictionaries) as input and returns a cost vector
@@ -74,7 +73,7 @@ end
 function purify(paths::Vector{<:QChannel}, return_as_dB::Bool=true)
     cost_vectors = Vector{Dict}()
     for path in paths
-        cost = get_pathcost(path)
+        cost = get_pathcv(path)
         push!(cost_vectors, cost)
     end
     purify(cost_vectors, return_as_dB)

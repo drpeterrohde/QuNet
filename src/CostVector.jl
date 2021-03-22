@@ -35,12 +35,12 @@ end
 
 
 """
-    function get_pathcost(path::Array{<:QChannel, 1})
+    function get_pathcv(path::Array{<:QChannel, 1})
 
-Returns a dictionary of costs the entirety of the QObjects contained in the
-path.
+Returns a dictionary of costs for a path in a QNetwork. Not to be confused with
+path_length(), which finds the scalar sum of weights for a path in an abstract graph.
 """
-function get_pathcost(path::Vector{<:QChannel})
+function get_pathcv(path::Vector{<:QChannel})
     if length(path) == 0
         return zero_costvector()
     end
@@ -59,28 +59,41 @@ function get_pathcost(path::Vector{<:QChannel})
     return cost_vector
 end
 
-function get_pathcost(path::QChannel)
-    get_pathcost([path])
+function get_pathcv(path::QChannel)
+    get_pathcv([path])
 end
 
-function get_pathcost(graph::AbstractGraph, path::Vector{Tuple{Int64, Int64}})
-    weight = 0
-    for edge in path
-        weight += graph.weights[edge[1], edge[2]]
-    end
-    return weight
-end
-
-function get_pathcost(network::QNetwork, path)
+function get_pathcv(network::QNetwork, path::Vector{Tuple{Int64, Int64}})::Dict{String, Float64}
     pathcost = Dict{String, Float64}()
-    for cost in keys(zero_costvector())
+    for cost_id in keys(zero_costvector())
         weight = 0.0
         for edge in path
-            src = edge.src
-            dst = edge.dst
-            weight += network.graph[cost].weights[src, dst]
+            src = edge[1]
+            dst = edge[2]
+            weight += network.graph[cost_id].weights[src, dst]
         end
-        pathcost[cost] = weight
+        pathcost[cost_id] = weight
     end
+    return pathcost
+end
+
+function get_pathcv(temp::QuNet.TemporalGraph, path::Vector{Tuple{Int64, Int64}})::Dict{String, Float64}
+    pathcost = Dict{String, Float64}()
+    for cost_id in keys(zero_costvector())
+        g = temp.graph[cost_id]
+        pathcost[cost_id] = path_length(g, path)
+    end
+    return pathcost
+end
+
+function get_pathcv(network::Union{QNetwork, QuNet.TemporalGraph},
+    path::Vector{LightGraphs.SimpleGraphs.SimpleEdge{Int64}})::Dict{String, Float64}
+
+    new_path = Vector{Tuple{Int64, Int64}}()
+    for edge in path
+        new_edge = (edge.src, edge.dst)
+        push!(new_path, new_edge)
+    end
+    pathcost = get_pathcv(network, new_path)
     return pathcost
 end

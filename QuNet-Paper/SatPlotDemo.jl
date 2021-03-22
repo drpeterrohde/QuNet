@@ -13,7 +13,7 @@ function get_costs_with_time(network::QNetwork, tmax::Float64, path::Array{<:QCh
         update(network, Float64(0))
     end
     while network.time < tmax
-        pathcost = get_pathcost(path)
+        pathcost = get_pathcv(path)
         for key in keys(zero_costvector())
             push!(costs[key], pathcost[key])
         end
@@ -44,7 +44,7 @@ function purify_costs_with_time(network::QNetwork, tmax::Float64,
     while network.time < tmax
         path_costs = Array{Dict{Any, Any}, 1}()
         for path in paths
-            path_cost = get_pathcost(path)
+            path_cost = get_pathcv(path)
             push!(path_costs, path_cost)
         end
 

@@ -17,14 +17,15 @@ The default QNode object. Nothing special, but nothing unspecial either ;-)"
 mutable struct BasicNode <: QNode
     name::String
     costs::Dict
-    memory::Dict
+    has_memory::Bool
+    memory_costs::Dict
     id::Int64
     time::Int64
     active::Bool
     location::Coords
 
-    BasicNode() = new("", zero_costvector(), unit_costvector(), 0, 0, true, Coords())
-    BasicNode(name) = new(string(name), zero_costvector(), unit_costvector(), 0, 0, true, Coords())
+    BasicNode() = new("", zero_costvector(), true, zero_costvector(), 0, 0, true, Coords())
+    BasicNode(name) = new(string(name), zero_costvector(), true, zero_costvector(), 0, 0, true, Coords())
 end
 
 """
@@ -73,6 +74,9 @@ end
 
 Does nothing
 """
+function update(node::QNode)
+end
+
 function update(node::QNode, old_time::Float64, new_time::Float64)
 end
 
@@ -121,15 +125,16 @@ according to a fixed velocity.
 mutable struct PlanSatNode <: QNode
     name::String
     costs::Dict
-    memory::Dict
+    has_memory::Bool
+    memory_costs::Dict
     id::Int64
     time::Int64
     active::Bool
     location::Coords
     velocity::Velocity
-    PlanSatNode() = new("", zero_costvector(), unit_costvector(),
+    PlanSatNode() = new("", zero_costvector(), true, unit_costvector(),
                     0, 0, true, Coords(), Velocity())
-    PlanSatNode(name) = new(string(name), zero_costvector(), unit_costvector(),
+    PlanSatNode(name) = new(string(name), zero_costvector(), true, zero_costvector(),
                         0, 0, true, Coords(), Velocity())
 end
 
