@@ -1,64 +1,43 @@
+# Preceeding from heatmap.jl (start there if you haven't already)
+
 # Libraries
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.stats import kde
+# This could be used for smoothing the heatmap out
+# from scipy.stats import kde
 
-df = pd.read_csv("/home/hudson/.julia/dev/QuNet/data/heatmap.csv")
-print(df)
+# Import data
+df = pd.read_csv("~/.julia/dev/QuNet/data/heatmap.csv")
 
 # Extract data into x, y
-print(df["Efficiency"])
 e = df["Efficiency"].tolist()
 f = df["Fidelity"].tolist()
 
-# Create a scatter plot
+# Create a heatmap of end-user data
 fig, axes = plt.subplots()
-axes.set_title("Scatterplot")
-axes.plot(e, f, 'ko')
+nbins = 40
+axes.hist2d(e, f, range=((0,1), (0.5, 1)), bins=nbins, cmap=plt.cm.hot)
 axes.set_xlabel("Efficiency")
 axes.set_ylabel("Fidelity")
-plt.show()
 
+# Collect data for the QKD contour plots
+delta = 0.01
+x = np.arange(0.0, 1.0, delta)
+y = np.arange(0.5, 1.0, delta )
+E, F = np.meshgrid(x, y)
 
-# # Sample Code to test plot functionality:
-# # https://www.python-graph-gallery.com/86-avoid-overlapping-in-scatterplot-with-2d-density
-# # Create data: 200 points
-# data = np.random.multivariate_normal([0, 0], [[1, 0.5], [0.5, 3]], 200)
-# x, y = data.T
-#
-# # Create a figure with 6 plot areas
-# fig, axes = plt.subplots(ncols=6, nrows=1, figsize=(21, 5))
-#
-# # Everything starts with a Scatterplot
-# axes[0].set_title('Scatterplot')
-# axes[0].plot(x, y, 'ko')
-# # As you can see there is a lot of overlapping here!
-#
-# # Thus we can cut the plotting window in several hexbins
-# nbins = 20
-# axes[1].set_title('Hexbin')
-# axes[1].hexbin(x, y, gridsize=nbins, cmap=plt.cm.BuGn_r)
-#
-# # 2D Histogram
-# axes[2].set_title('2D Histogram')
-# axes[2].hist2d(x, y, bins=nbins, cmap=plt.cm.BuGn_r)
-#
-# # Evaluate a gaussian kde on a regular grid of nbins x nbins over data extents
-# k = kde.gaussian_kde(data.T)
-# xi, yi = np.mgrid[x.min():x.max():nbins * 1j, y.min():y.max():nbins * 1j]
-# zi = k(np.vstack([xi.flatten(), yi.flatten()]))
-#
-# # plot a density
-# axes[3].set_title('Calculate Gaussian KDE')
-# axes[3].pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto', cmap=plt.cm.BuGn_r)
-#
-# # add shading
-# axes[4].set_title('2D Density with shading')
-# axes[4].pcolormesh(xi, yi, zi.reshape(xi.shape), shading='gouraud', cmap=plt.cm.BuGn_r)
-#
-# # contour
-# axes[5].set_title('Contour')
-# axes[5].pcolormesh(xi, yi, zi.reshape(xi.shape), shading='gouraud', cmap=plt.cm.BuGn_r)
-# axes[5].contour(xi, yi, zi.reshape(xi.shape))
+# End to end failure rate of a 100 x 100 grid lattice with 50 competing user pairs
+P0 = 0.201
+
+# Average rate of transmission per user pair
+R = (1-P0) * E
+
+# QKD contour
+Z = R * (1 - (F * np.log(1 - F)/np.log(2) + (1 - F) * np.log(F)/np.log(2)))
+
+# Overlay the contour for Z = 1, 2, 3, ...
+# CS = axes.contour(E, F, Z, levels = [1, 2, 3, 4, 5])
+# axes.clabel(CS, inline=1, fontsize=10, fmt="%1.1f")
 # plt.show()
+plt.savefig("singleheat.pdf")

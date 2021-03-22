@@ -20,7 +20,7 @@ mutable struct QNetwork <: QObject
     end
 end
 
-function QNetwork(graph::AbstractGraph)
+function QNetwork(graph::AbstractGraph; edge_costs=unit_costvector())
     network = QNetwork()
 
     vertexCount = 0
@@ -32,7 +32,8 @@ function QNetwork(graph::AbstractGraph)
     edgeCount = 0
     for edge in edges(graph)
         edgeCount += 1
-        add(network, BasicChannel(string(edgeCount), network.nodes[edge.src], network.nodes[edge.dst]))
+        add(network, BasicChannel(string(edgeCount), network.nodes[edge.src], network.nodes[edge.dst],
+        edge_costs))
     end
 
     return network
@@ -87,9 +88,9 @@ end
 
 Generates an X by Y grid network.
 """
-function GridNetwork(dimX::Int64, dimY::Int64)
+function GridNetwork(dimX::Int64, dimY::Int64; edge_costs::Dict = unit_costvector())
     graph = LightGraphs.grid([dimX,dimY])
-    net = QNetwork(graph)
+    net = QNetwork(graph; edge_costs=edge_costs)
 
     for x in 1:dimX
         for y in 1:dimY

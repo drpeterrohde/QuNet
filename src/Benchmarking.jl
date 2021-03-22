@@ -221,6 +221,7 @@ function heat_data(network::Union{QNetwork, QuNet.TemporalGraph},
     coord_list = []
 
     for i in 1:num_trials
+        println("Collecting data for trial $i")
         net = deepcopy(network)
 
         # Generate random communication pairs
