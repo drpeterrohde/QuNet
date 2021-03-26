@@ -2,6 +2,11 @@ __precompile__(true)
 
 module QuNet
 
+using Pkg
+dependencies = ["LightGraphs", "SimpleWeightedGraphs", "GraphPlot", "MetaGraphs", "Documenter", "StatsBase", "LinearAlgebra", "Statistics", "Colors", "Plots", "LaTeXStrings", "Cairo", "Compose", "SparseArrays", "QuadGK", "SatelliteToolbox"]
+Pkg.add(dependencies)
+
+
 # TODO: Update what we should be using vs importing. Be discriminating!
 using LightGraphs, SimpleWeightedGraphs, GraphPlot, MetaGraphs
 using LinearAlgebra, StatsBase, Statistics
