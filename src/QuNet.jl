@@ -2,13 +2,8 @@ __precompile__(true)
 
 module QuNet
 
-using Pkg
-dependencies = ["LightGraphs", "SimpleWeightedGraphs", "GraphPlot", "MetaGraphs", "Documenter", "StatsBase", "LinearAlgebra", "Statistics", "Colors", "Plots", "LaTeXStrings", "Cairo", "Compose", "SparseArrays", "QuadGK", "SatelliteToolbox"]
-Pkg.add(dependencies)
-
-
 # TODO: Update what we should be using vs importing. Be discriminating!
-using LightGraphs, SimpleWeightedGraphs, GraphPlot, MetaGraphs
+using LightGraphs, SimpleWeightedGraphs, GraphPlot, MetaGraphs, GraphRecipes
 using LinearAlgebra, StatsBase, Statistics
 using Documenter, Colors, Plots, LaTeXStrings
 
@@ -40,6 +35,7 @@ include("Plot.jl")
 include("Utilities.jl")
 include("Benchmarking.jl")
 include("GraphInterface.jl")
+include("TypeTree.jl")
 
 export
 # Abstract Classes
@@ -76,5 +72,8 @@ shortest_path,
 
 # Utilities.jl
 dB_to_P, P_to_dB, Z_to_dB, dB_to_Z, purify
+
+# TypeTree.jl
+qunet_type_tree
 
 end
