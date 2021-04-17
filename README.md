@@ -6,7 +6,7 @@ A quantum network simulator and benchmarking tool based on cost vector analysis,
 
 Authors:
 + Mr. Hudson Leone ([leoneht0@gmail.com](mailto:leoneht0@gmail.com))
-+ Dr. Peter Rohde ([dr.rohde@gmail.com](mailto:dr.rohde@gmail.com))
++ Dr. Peter Rohde ([dr.rohde@gmail.com](mailto:dr.rohde@gmail.com), [www.peterrohde.org](https://www.peterrohde.org))
 
 # Goal
 
@@ -94,7 +94,7 @@ The compression ratio is the ratio between routing time with and without memorie
 
 Here’s a multi-user network with 3 users (colour coded) and multi-path routing (maximum 3 paths per user). The stacked layers represent time.
 
-<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115102120-5679e900-9f8c-11eb-9f3c-284a61354520.jpeg" width="60%" align="middle"></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115102120-5679e900-9f8c-11eb-9f3c-284a61354520.jpeg" width="50%" align="middle"></p>
 <!--- ![BFFD97D5-66CD-4880-A2F0-A1CA11F710EA](https://user-images.githubusercontent.com/4382522/115102120-5679e900-9f8c-11eb-9f3c-284a61354520.jpeg) --->
 
 # Efficient multi-path routing
