@@ -1,3 +1,9 @@
+<script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax: {inlineMath:[['$','$']]}});</script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=default' async></script>
+
+
+ ~$G=\frac{\partial C}{\partial t}$~.
+
 # About
 
 A quantum network simulator and benchmarking tool based on cost vector analysis, implemented in Julia.
