@@ -118,12 +118,14 @@ This heat map shows the fidelity/efficiency trade off for random user pairs on a
 
 Our next stage of research is applying QuNet to distributed quantum computing. Entanglement links can be used to fuse together geographically separated graph states, facilitating distributed quantum computation exponentially more powerful than the sum of the parts.
 
-<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115102168-9f31a200-9f8c-11eb-8e4a-7942752468fe.jpeg" width="50%" align="middle"></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115102168-9f31a200-9f8c-11eb-8e4a-7942752468fe.jpeg" width="60%" align="middle"></p>
 <!--- ![849B6215-EF77-4E3B-89DE-7E09E935B609](https://user-images.githubusercontent.com/4382522/115102168-9f31a200-9f8c-11eb-8e4a-7942752468fe.jpeg) --->
 
 Consider a distributed computer with N nodes, each with n bits/qubits, and a scaling function that indicates classical-equivalent compute power (classically this is linear, for quantum computers super-linear). The computational gain achieved by unifying remote devices is,
 
+<p align="center">
 $$ \lambda = \frac{f_\mathrm{sc}(Nn)}{N\cdot f_\mathrm{sc}(n)} $$.
+</p>
 <!--- ![31684FB9-FAB0-4C00-A44C-3A4BB5CBB809](https://user-images.githubusercontent.com/4382522/115102197-ba9cad00-9f8c-11eb-97b6-2adc7d92769e.jpeg) --->
 
 Through unification of remote computational assets:
