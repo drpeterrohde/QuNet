@@ -11,7 +11,9 @@ The paper _"QuNet: Cost vector analysis & multi-path entanglement routing in qua
 
 Developers:
 + Hudson Leone ([leoneht0@gmail.com](mailto:leoneht0@gmail.com))
++ Nathaniel Miller
 + Deepesh Singh
++ Nathan Langford
 + Peter Rohde ([dr.rohde@gmail.com](mailto:dr.rohde@gmail.com), [www.peterrohde.org](https://www.peterrohde.org))
 
 # Goal
@@ -149,3 +151,5 @@ Through unification of remote computational assets:
 # The vision, the book
 
 Our vision for the quantum internet is presented in the upcoming book [“The Quantum Internet”](https://cup.org/2Q7UpM4) published by Cambridge University Press.
+
+# Acknowledgements
