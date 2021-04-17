@@ -63,7 +63,7 @@ Here’s a multi-user network with 3 users (colour coded) and multi-path routing
 
 # Efficient multi-path routing
 
-Our greedy multi-path routing algorithm allows multi-user routing with congestion mitigation via quantum memories, with algorithmic efficiency $O(M^3 V^2)$, for _M_ user-pairs on a _V_-vertex graph, and is therefore highly scalable and efficient in both users and network size.
+Our greedy multi-path routing algorithm allows multi-user routing with congestion mitigation via quantum memories, with algorithmic efficiency _O(M^3 V^2)_, for _M_ user-pairs on a _V_-vertex graph, and is therefore highly scalable and efficient in both users and network size.
 
 Here we consider a grid network with edge percolations, showing the likelihood of users utilising different path numbers as the network becomes increasingly disconnected.
 
@@ -91,4 +91,4 @@ Through unification of remote computational assets:
 
 # The vision, the book
 
-Our vision for the quantum internet is presented in the upcoming book “The Quantum Internet” https://cup.org/2Q7UpM4.
+Our vision for the quantum internet is presented in the upcoming book [“The Quantum Internet”](https://cup.org/2Q7UpM4) published by Cambridge University Press.
