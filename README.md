@@ -23,8 +23,8 @@ Classical networks rely on path-finding algorithms (e.g shortest path a la Dijks
 
 Primitive operations in quantum networks include entanglement swapping (for extending entanglement links), and entanglement purification (for boosting fidelity).
 
-<img src="https://user-images.githubusercontent.com/4382522/115101972-82489f00-9f8b-11eb-8e5d-62bb39d81e74.jpeg" width="30%" align="middle">
-<img src="https://user-images.githubusercontent.com/4382522/115101973-84126280-9f8b-11eb-95d1-c6e2d43ef390.jpeg" width="50%" align="middle">
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115101972-82489f00-9f8b-11eb-8e5d-62bb39d81e74.jpeg" width="30%" align="middle"></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115101973-84126280-9f8b-11eb-95d1-c6e2d43ef390.jpeg" width="50%" align="middle"></p>
 
 <!---
 ![8874AFC3-5CCE-4C02-B13C-99990B60679B](https://user-images.githubusercontent.com/4382522/115101972-82489f00-9f8b-11eb-8e5d-62bb39d81e74.jpeg)
@@ -35,7 +35,7 @@ Primitive operations in quantum networks include entanglement swapping (for exte
 
 These primitives provide simple substitution rules for graph reduction.
 
-<img src="https://user-images.githubusercontent.com/4382522/115101982-98565f80-9f8b-11eb-9a2f-a737a99c37ae.jpeg" width="50%" align="middle">
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115101982-98565f80-9f8b-11eb-9a2f-a737a99c37ae.jpeg" width="50%" align="middle"></p>
 <!--- ![B26B4EEC-96C4-4F6D-A762-A19D86C20823](https://user-images.githubusercontent.com/4382522/115101982-98565f80-9f8b-11eb-9a2f-a737a99c37ae.jpeg) --->
 
 # Space-based networks
@@ -45,8 +45,8 @@ Here Alice & Bob have the option of communicating via:
 + A LEO satellite passing overhead through atmospheric free-space channels, which dynamically update.
 + Exploiting both and purifying them together (multi-path routing).
 
-<img src="https://user-images.githubusercontent.com/4382522/115101996-bae87880-9f8b-11eb-8f99-e06c1c65f8c1.jpeg" width="50%" align="middle">
-<img src="https://user-images.githubusercontent.com/4382522/115101998-bcb23c00-9f8b-11eb-853c-487708e3cbac.jpeg" width="50%" align="middle">
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115101996-bae87880-9f8b-11eb-8f99-e06c1c65f8c1.jpeg" width="50%" align="middle"></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115101998-bcb23c00-9f8b-11eb-853c-487708e3cbac.jpeg" width="50%" align="middle"></p>
 
 <!---
 ![04AABAD5-8CB2-4F67-BED7-0E28AE4CD71F](https://user-images.githubusercontent.com/4382522/115101996-bae87880-9f8b-11eb-8f99-e06c1c65f8c1.jpeg)
@@ -82,18 +82,19 @@ end
 
 We accommodate for quantum memories by treating them as temporal channels between the respective nodes of identical copies of the underlying graph, where each layer represents the network at a particular point in time.
 
-![FE76132D-706C-488B-A6C8-B6B1536283BA](https://user-images.githubusercontent.com/4382522/115102057-06028b80-9f8c-11eb-9f8b-76c8c58d38f5.jpeg)
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115102057-06028b80-9f8c-11eb-9f8b-76c8c58d38f5.jpeg" width="100%" align="middle"></p>
+<!--- ![FE76132D-706C-488B-A6C8-B6B1536283BA](https://user-images.githubusercontent.com/4382522/115102057-06028b80-9f8c-11eb-9f8b-76c8c58d38f5.jpeg) --->
 
 The incrementally weighted asynchronous nodes guide the routing algorithm to preference earlier times, thereby temporally compressing multi-user routing, and providing a temporal routing queue.
 
 The compression ratio is the ratio between routing time with and without memories. Here we show the temporal compression ratio of our algorithm against increasing network congestion.
 
-<img src="https://user-images.githubusercontent.com/4382522/115102085-2af6fe80-9f8c-11eb-9cc9-a3a51beaddf5.jpeg" width="50%" align="middle">
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115102085-2af6fe80-9f8c-11eb-9cc9-a3a51beaddf5.jpeg" width="50%" align="middle"></p>
 <!--- ![205A8E5E-4ECA-4E30-83E7-48444F178BB0](https://user-images.githubusercontent.com/4382522/115102085-2af6fe80-9f8c-11eb-9cc9-a3a51beaddf5.jpeg) --->
 
 Here’s a multi-user network with 3 users (colour coded) and multi-path routing (maximum 3 paths per user). The stacked layers represent time.
 
-<img src="https://user-images.githubusercontent.com/4382522/115102120-5679e900-9f8c-11eb-9f3c-284a61354520.jpeg" width="70%" align="middle">
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115102120-5679e900-9f8c-11eb-9f3c-284a61354520.jpeg" width="70%" align="middle"></p>
 <!--- ![BFFD97D5-66CD-4880-A2F0-A1CA11F710EA](https://user-images.githubusercontent.com/4382522/115102120-5679e900-9f8c-11eb-9f3c-284a61354520.jpeg) --->
 
 # Efficient multi-path routing
@@ -103,21 +104,21 @@ $$ O(M^3V^2) $$, for _M_ user-pairs on a _V_-vertex graph, and is therefore high
 
 Here we consider a grid network with edge percolations, showing the likelihood of users utilising different path numbers as the network becomes increasingly disconnected.
 
-<img src="https://user-images.githubusercontent.com/4382522/115102139-73aeb780-9f8c-11eb-80ef-f3a620479995.jpeg" width="50%" align="middle">
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115102139-73aeb780-9f8c-11eb-80ef-f3a620479995.jpeg" width="50%" align="middle"></p>
 <!--- ![D703EE9D-3CEB-44AC-9F38-AB00DED24637](https://user-images.githubusercontent.com/4382522/115102139-73aeb780-9f8c-11eb-80ef-f3a620479995.jpeg) --->
 
 # Application to quantum key distribution
 
 This heat map shows the fidelity/efficiency trade off for random user pairs on a square lattice network. The distinct heat curves correspond to different numbers of paths utilised. Superimposed contours show achievable per-user E91 QKD secret key rates for the network.
 
-<img src="https://user-images.githubusercontent.com/4382522/115102157-87f2b480-9f8c-11eb-993b-977575973893.jpeg" width="50%" align="middle">
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115102157-87f2b480-9f8c-11eb-993b-977575973893.jpeg" width="50%" align="middle"></p>
 <!--- ![A324DFFD-5CFD-4461-8334-E2DD087A2784](https://user-images.githubusercontent.com/4382522/115102157-87f2b480-9f8c-11eb-993b-977575973893.jpeg) --->
 
 # Application to distributed quantum computing
 
 Our next stage of research is applying QuNet to distributed quantum computing. Entanglement links can be used to fuse together geographically separated graph states, facilitating distributed quantum computation exponentially more powerful than the sum of the parts.
 
-<img src="https://user-images.githubusercontent.com/4382522/115102168-9f31a200-9f8c-11eb-8e4a-7942752468fe.jpeg" width="50%" align="middle">
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115102168-9f31a200-9f8c-11eb-8e4a-7942752468fe.jpeg" width="50%" align="middle"></p>
 <!--- ![849B6215-EF77-4E3B-89DE-7E09E935B609](https://user-images.githubusercontent.com/4382522/115102168-9f31a200-9f8c-11eb-8e4a-7942752468fe.jpeg) --->
 
 Consider a distributed computer with N nodes, each with n bits/qubits, and a scaling function that indicates classical-equivalent compute power (classically this is linear, for quantum computers super-linear). The computational gain achieved by unifying remote devices is,
