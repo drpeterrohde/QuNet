@@ -60,6 +60,8 @@ This is the QuNet code in Julia that creates that network. Julia modules can be 
 <!--- ![F8B2F2BD-59E6-4FDE-8A14-183D136A5E0A](https://user-images.githubusercontent.com/4382522/115102036-ea978080-9f8b-11eb-872f-143fb3e438f3.jpeg) --->
 
 ```julia
+using QuNet
+
 Q = QNetwork()
 A = BasicNode("A")
 B = BasicNode("B")
