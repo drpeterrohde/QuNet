@@ -54,6 +54,8 @@ These primitives provide simple substitution rules for graph reduction.
 
 # Network abstraction
 
+Quantum repeaters, comprising classically-controlled (and sometimes randomised) sequences of swapping and purification operations, can be reduced to a single virtual link capturing their average cost vector, thereby bypassing the need for directly accommodating non-deterministic or classically-controlled operations, maintaining compatability with the QuNet framework. For large networks it may not always be necessary to understand the full dynamics across all nodes and channels. Instead we might focus higher-level abstractions of the network, which consider the dynamics between designated subnetworks or regions, reducing computational load.
+
 # Space-based networks
 
 Here Alice & Bob have the option of communicating via:
