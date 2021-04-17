@@ -2,7 +2,7 @@
 <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=default' async></script>
 
 
-``$G=\frac{\partial C}{\partial t}$``
+~``$G=\frac{\partial C}{\partial t}$``~
 test
 ``G=\frac{\partial C}{\partial t}``
 `$G=\frac{\partial C}{\partial t}$`
