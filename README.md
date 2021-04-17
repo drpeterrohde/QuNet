@@ -20,7 +20,7 @@ Developers:
 
 QuNet is a highly-scalable, multi-user quantum network simulator and benchmarking tool implemented in Julia. It relies on efficient algorithms for performing multi-user routing and congestion avoidance using quantum memories. QuNet focusses on the specific task of distributing entangled Bell pairs,
 <p align="center">
-$$ |\Psi^+\rangle = \frac{1}{\sqrt{2}}(|00\rangle + |11\rangle). $$
+$$|\Psi^+\rangle = \frac{1}{\sqrt{2}}(|00\rangle + |11\rangle).$$
 </p>
 These can subsequently be employed in state teleportation protocols to transmit arbitrary quantum states, or be applied to quantum key distribution, distributed quantum computing, or other entanglement-based quantum protocols.
 
@@ -119,7 +119,7 @@ Here’s a multi-user network with 3 users (colour coded) and multi-path routing
 
 Our greedy multi-path routing algorithm allows multi-user routing with congestion mitigation via quantum memories, with algorithmic efficiency,
 <p align="center">
-$$ O(M^3V^2), $$
+$$O(M^3V^2),$$
 </p>
 for $$M$$ user-pairs on a $$V$$-vertex graph, and is therefore highly scalable and efficient in both users and network size.
 
@@ -145,13 +145,13 @@ Our next stage of research is applying QuNet to distributed quantum computing. E
 Consider a distributed computer with N nodes, each with n bits/qubits, and a scaling function that indicates classical-equivalent compute power (classically this is linear, for quantum computers super-linear). The computational gain achieved by unifying remote devices is,
 
 <p align="center">
-$$ \lambda = \frac{f_\mathrm{sc}(Nn)}{N\cdot f_\mathrm{sc}(n)}. $$
+$$\lambda = \frac{f_\mathrm{sc}(Nn)}{N\cdot f_\mathrm{sc}(n)}.$$
 </p>
 <!--- ![31684FB9-FAB0-4C00-A44C-3A4BB5CBB809](https://user-images.githubusercontent.com/4382522/115102197-ba9cad00-9f8c-11eb-97b6-2adc7d92769e.jpeg) --->
 
 Through unification of remote computational assets:
-+ Classical computers, $$ \lambda=1 $$. There is no computational enhancement.
-+ Quantum computers $$ \lambda>1 $$, in the best case $$ \lambda=\mathrm{exp}(N) $$. We achieve exponential computational enhancement.
++ Classical computers, $$\lambda=1$$. There is no computational enhancement.
++ Quantum computers $$\lambda>1$$, in the best case $$\lambda=\mathrm{exp}(N)$$. We achieve exponential computational enhancement.
 
 # The vision, the book
 
