@@ -10,7 +10,11 @@ Developers:
 
 # Goal
 
-QuNet is a highly-scalable, multi-user quantum network simulator and benchmarking tool implemented in Julia. It relies on efficient algorithms for performing multi-user routing and congestion avoidance using quantum memories. QuNet focusses on the specific task of distributing entangled Bell pairs, $$ |\Psi^+\rangle = (|00\rangle + |11\rangle)/\sqrt{2} $$, which can subsequently be employed in state teleportation protocols to transmit arbitrary quantum states, or be applied to quantum key distribution, distributed quantum computing, or other entanglement-based quantum protocols.
+QuNet is a highly-scalable, multi-user quantum network simulator and benchmarking tool implemented in Julia. It relies on efficient algorithms for performing multi-user routing and congestion avoidance using quantum memories. QuNet focusses on the specific task of distributing entangled Bell pairs,
+<p align="center">
+$$ |\Psi^+\rangle = (|00\rangle + |11\rangle)/\sqrt{2}. $$
+</p>
+These can subsequently be employed in state teleportation protocols to transmit arbitrary quantum states, or be applied to quantum key distribution, distributed quantum computing, or other entanglement-based quantum protocols.
 
 QuNet uses a _cost vector_ methodology. Rather than track quantum states themselves, we track their associated _costs_ as they traverse the network. Costs are arbitrary properties that accumulate additively as qubits traverse networks. We can express physical degradation such as loss, dephasing or depolarising processes in this form, and also non-physical costs such as monetary ones. Tracking the accumulation of costs acting on Bell pairs is equivalent to directly tracking the states themselves.
 
