@@ -155,3 +155,5 @@ Through unification of remote computational assets:
 Our vision for the quantum internet is presented in the upcoming book [“The Quantum Internet”](https://cup.org/2Q7UpM4) published by Cambridge University Press.
 
 # Acknowledgements
+
+We thank Darcy Morgan, Alexis Shaw, Marika Kieferova, Zixin Huang, Louis Tessler, Yuval Sanders, Jasminder Sidhu, Simon Devitt & Jon Dowling for conversation (both helpful, unhelpful, meaningless, derogatory, and diatribe). We also thank the developers of [JuliaGraphs](https://juliagraphs.org), which QuNet makes heavy use of.
