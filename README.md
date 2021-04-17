@@ -21,14 +21,20 @@ Classical networks rely on path-finding algorithms (e.g shortest path a la Dijks
 
 Primitive operations in quantum networks include entanglement swapping (for extending entanglement links), and entanglement purification (for boosting fidelity).
 
+<img src="https://user-images.githubusercontent.com/4382522/115101972-82489f00-9f8b-11eb-8e5d-62bb39d81e74.jpeg" width="50%">
+<img src="https://user-images.githubusercontent.com/4382522/115101973-84126280-9f8b-11eb-95d1-c6e2d43ef390.jpeg" width="50%">
+
+<!---
 ![8874AFC3-5CCE-4C02-B13C-99990B60679B](https://user-images.githubusercontent.com/4382522/115101972-82489f00-9f8b-11eb-8e5d-62bb39d81e74.jpeg)
 ![3022BE3F-72E4-45DD-A907-AC4046BCF8B2](https://user-images.githubusercontent.com/4382522/115101973-84126280-9f8b-11eb-95d1-c6e2d43ef390.jpeg)
+--->
 
 # Graph reduction
 
 These primitives provide simple substitution rules for graph reduction.
 
-![B26B4EEC-96C4-4F6D-A762-A19D86C20823](https://user-images.githubusercontent.com/4382522/115101982-98565f80-9f8b-11eb-9a2f-a737a99c37ae.jpeg)
+<img src="https://user-images.githubusercontent.com/4382522/115101982-98565f80-9f8b-11eb-9a2f-a737a99c37ae.jpeg" width="50%">
+<!--- ![B26B4EEC-96C4-4F6D-A762-A19D86C20823](https://user-images.githubusercontent.com/4382522/115101982-98565f80-9f8b-11eb-9a2f-a737a99c37ae.jpeg) --->
 
 # Space-based networks
 
@@ -37,8 +43,13 @@ Here Alice & Bob have the option of communicating via:
 + A LEO satellite passing overhead through atmospheric free-space channels, which dynamically update.
 + Exploiting both and purifying them together (multi-path routing).
 
+<img src="https://user-images.githubusercontent.com/4382522/115101996-bae87880-9f8b-11eb-8f99-e06c1c65f8c1.jpeg" width="50%">
+<img src="https://user-images.githubusercontent.com/4382522/115101998-bcb23c00-9f8b-11eb-853c-487708e3cbac.jpeg" width="50%">
+
+<!---
 ![04AABAD5-8CB2-4F67-BED7-0E28AE4CD71F](https://user-images.githubusercontent.com/4382522/115101996-bae87880-9f8b-11eb-8f99-e06c1c65f8c1.jpeg)
 ![6F973A32-33B6-4A3E-B92C-0D8CE9165B96](https://user-images.githubusercontent.com/4382522/115101998-bcb23c00-9f8b-11eb-853c-487708e3cbac.jpeg)
+--->
 
 # Code example
 
