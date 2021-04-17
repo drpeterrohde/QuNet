@@ -5,8 +5,9 @@
 The paper _"QuNet: Cost vector analysis & multi-path entanglement routing in quantum networks"_ (Leone, Miller, Singh, Langford & Rohde, 2021) presents the theory, design and initial results for QuNet.
 
 Developers:
-+ Mr. Hudson Leone ([leoneht0@gmail.com](mailto:leoneht0@gmail.com))
-+ Dr. Peter Rohde ([dr.rohde@gmail.com](mailto:dr.rohde@gmail.com), [www.peterrohde.org](https://www.peterrohde.org))
++ Hudson Leone ([leoneht0@gmail.com](mailto:leoneht0@gmail.com))
++ Deepesh Singh
++ Peter Rohde @peterrohde ([dr.rohde@gmail.com](mailto:dr.rohde@gmail.com), [www.peterrohde.org](https://www.peterrohde.org))
 
 # Goal
 
