@@ -119,9 +119,9 @@ Here’s a multi-user network with 3 users (colour coded) and multi-path routing
 
 Our greedy multi-path routing algorithm allows multi-user routing with congestion mitigation via quantum memories, with algorithmic efficiency,
 <p align="center">
-$$ O(M^3V^2) $$,
+$$ O(M^3V^2), $$
 </p>
-for $$ M $$ user-pairs on a $$ V $$-vertex graph, and is therefore highly scalable and efficient in both users and network size.
+for $$M$$ user-pairs on a $$V$$-vertex graph, and is therefore highly scalable and efficient in both users and network size.
 
 Here we consider a grid network with edge percolations, showing the likelihood of users utilising different path numbers as the network becomes increasingly disconnected.
 
