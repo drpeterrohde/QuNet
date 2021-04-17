@@ -1,7 +1,5 @@
 <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
 
-$$ a^b $$
-
 # About
 
 A quantum network simulator and benchmarking tool based on cost vector analysis, implemented in Julia.
@@ -100,7 +98,8 @@ Here’s a multi-user network with 3 users (colour coded) and multi-path routing
 
 # Efficient multi-path routing
 
-Our greedy multi-path routing algorithm allows multi-user routing with congestion mitigation via quantum memories, with algorithmic efficiency ``$$O(_M_^3 _V_^2)$$``, for _M_ user-pairs on a _V_-vertex graph, and is therefore highly scalable and efficient in both users and network size.
+Our greedy multi-path routing algorithm allows multi-user routing with congestion mitigation via quantum memories, with algorithmic efficiency 
+$$ O(M^3V^2) $$, for _M_ user-pairs on a _V_-vertex graph, and is therefore highly scalable and efficient in both users and network size.
 
 Here we consider a grid network with edge percolations, showing the likelihood of users utilising different path numbers as the network becomes increasingly disconnected.
 
@@ -120,13 +119,14 @@ Our next stage of research is applying QuNet to distributed quantum computing. E
 
 ![849B6215-EF77-4E3B-89DE-7E09E935B609](https://user-images.githubusercontent.com/4382522/115102168-9f31a200-9f8c-11eb-8e4a-7942752468fe.jpeg)
 
-Consider a distributed computer with N nodes, each with n bits/qubits, and a scaling function that indicates classical-equivalent compute power (classically this is linear, for quantum computers super-linear). The computational gain achieved by unifying remote devices is.
+Consider a distributed computer with N nodes, each with n bits/qubits, and a scaling function that indicates classical-equivalent compute power (classically this is linear, for quantum computers super-linear). The computational gain achieved by unifying remote devices is,
 
-![31684FB9-FAB0-4C00-A44C-3A4BB5CBB809](https://user-images.githubusercontent.com/4382522/115102197-ba9cad00-9f8c-11eb-97b6-2adc7d92769e.jpeg)
+$$ \lambda = \frac{f_\mathrm{sc}(Nn)}{N\cdot f_\mathrm{sc}(n)} $$.
+<!--- ![31684FB9-FAB0-4C00-A44C-3A4BB5CBB809](https://user-images.githubusercontent.com/4382522/115102197-ba9cad00-9f8c-11eb-97b6-2adc7d92769e.jpeg) --->
 
 Through unification of remote computational assets:
-+ Classical computers, λ=1. There is no computational enhancement.
-+ Quantum computers λ>1, in the best case λ=exp(N). We achieve exponential computational enhancement.
++ Classical computers, $$ \lambda=1 $$. There is no computational enhancement.
++ Quantum computers $$ \lambda>1 $$, in the best case $$ \lambda=\mathrm{exp}(N) $$. We achieve exponential computational enhancement.
 
 # The vision, the book
 
