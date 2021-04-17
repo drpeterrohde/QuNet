@@ -52,6 +52,8 @@ These primitives provide simple substitution rules for graph reduction.
 <p align="center"><img src="https://user-images.githubusercontent.com/4382522/115101982-98565f80-9f8b-11eb-9a2f-a737a99c37ae.jpeg" width="50%" align="middle"></p>
 <!--- ![B26B4EEC-96C4-4F6D-A762-A19D86C20823](https://user-images.githubusercontent.com/4382522/115101982-98565f80-9f8b-11eb-9a2f-a737a99c37ae.jpeg) --->
 
+# Network abstraction
+
 # Space-based networks
 
 Here Alice & Bob have the option of communicating via:
