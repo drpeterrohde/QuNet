@@ -46,7 +46,7 @@ Here Alice & Bob have the option of communicating via:
 + Exploiting both and purifying them together (multi-path routing).
 
 <p align="center"><img src="https://user-images.githubusercontent.com/4382522/115101996-bae87880-9f8b-11eb-8f99-e06c1c65f8c1.jpeg" width="50%" align="middle"></p>
-<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115101998-bcb23c00-9f8b-11eb-853c-487708e3cbac.jpeg" width="50%" align="middle"></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115101998-bcb23c00-9f8b-11eb-853c-487708e3cbac.jpeg" width="40%" align="middle"></p>
 
 <!---
 ![04AABAD5-8CB2-4F67-BED7-0E28AE4CD71F](https://user-images.githubusercontent.com/4382522/115101996-bae87880-9f8b-11eb-8f99-e06c1c65f8c1.jpeg)
@@ -94,7 +94,7 @@ The compression ratio is the ratio between routing time with and without memorie
 
 Here’s a multi-user network with 3 users (colour coded) and multi-path routing (maximum 3 paths per user). The stacked layers represent time.
 
-<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115102120-5679e900-9f8c-11eb-9f3c-284a61354520.jpeg" width="70%" align="middle"></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/4382522/115102120-5679e900-9f8c-11eb-9f3c-284a61354520.jpeg" width="60%" align="middle"></p>
 <!--- ![BFFD97D5-66CD-4880-A2F0-A1CA11F710EA](https://user-images.githubusercontent.com/4382522/115102120-5679e900-9f8c-11eb-9f3c-284a61354520.jpeg) --->
 
 # Efficient multi-path routing
