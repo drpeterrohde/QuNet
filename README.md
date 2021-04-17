@@ -7,6 +7,11 @@ test
 ``G=\frac{\partial C}{\partial t}``
 `$G=\frac{\partial C}{\partial t}$`
 
+ting
+
+```math
+f(a) = \frac{1}{2\pi}\int_{0}^{2\pi} (\alpha+R\cos(\theta))d\theta
+```
 
 # About
 
