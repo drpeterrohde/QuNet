@@ -2,15 +2,17 @@
 
 # About
 
-A quantum network simulator and benchmarking tool based on cost vector analysis, implemented in Julia.
+The paper "QuNet: Cost vector analysis \& multi-path entanglement routing in quantum networks" (Leone, Miller, Singh, Langford & Rohde, 2021) presents the theory, design and initial results for QuNet.
 
-Authors:
+Developers:
 + Mr. Hudson Leone ([leoneht0@gmail.com](mailto:leoneht0@gmail.com))
 + Dr. Peter Rohde ([dr.rohde@gmail.com](mailto:dr.rohde@gmail.com), [www.peterrohde.org](https://www.peterrohde.org))
 
 # Goal
 
-Efficient simulation of multi-user entanglement distribution networks using cost-vector analysis. ‘Costs’ are arbitrary properties that accumulate additively as qubits traverse networks. We can express loss, dephasing & depolarising channels, and monetary cost in this form.
+QuNet is a highly-scalable, multi-user quantum network simulator and benchmarking tool implemented in Julia. It relies on efficient algorithms for performing multi-user routing and congestion avoidance using quantum memories. QuNet focusses on the specific task of distributing entangled Bell pairs, $$ |\Psi^+\rangle = (|00\rangle + |11\rangle)/\sqrt{2} $$, which can subsequently be employed in state teleportation protocols to transmit arbitrary quantum states, or be applied to quantum key distribution, distributed quantum computing, or other entanglement-based quantum protocols.
+
+QuNet uses a _cost vector_ methodology. Rather than track quantum states themselves, we track their associated _costs_ as they traverse the network. Costs are arbitrary properties that accumulate additively as qubits traverse networks. We can express physical degradation such as loss, dephasing or depolarising processes in this form, and also non-physical costs such as monetary ones. Tracking the accumulation of costs acting on Bell pairs is equivalent to directly tracking the states themselves.
 
 # Multi-path routing
 
