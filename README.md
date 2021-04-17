@@ -3,6 +3,10 @@
 
 
 ``$G=\frac{\partial C}{\partial t}$``
+test
+``G=\frac{\partial C}{\partial t}``
+`$G=\frac{\partial C}{\partial t}$`
+
 
 # About
 
