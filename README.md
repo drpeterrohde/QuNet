@@ -55,7 +55,7 @@ Here Alice & Bob have the option of communicating via:
 
 # Code example
 
-This is the QuNet code in Julia that creates that network. Julia modules can be called from Python or run in Jupyter notebooks too. You can learn more about Julia at [www.julialang.org](https://www.julialang.org).
+This is the QuNet code in Julia that creates that network. Julia modules can be called from Python or run in Jupyter notebooks too. You can learn more about the Julia language at [www.julialang.org](https://www.julialang.org).
 
 <!--- ![F8B2F2BD-59E6-4FDE-8A14-183D136A5E0A](https://user-images.githubusercontent.com/4382522/115102036-ea978080-9f8b-11eb-872f-143fb3e438f3.jpeg) --->
 
@@ -70,8 +70,8 @@ S.location = Coords(-2000,0,1000)
 S.velocity = Velocity(1000, 0)
 
 AB = BasicChannel(A, B, exp_cost=true)
-AS = QuNet.AirChannel(A, S)
-SB = QuNet.AirChannel(S, B)
+AS = AirChannel(A, S)
+SB = AirChannel(S, B)
 
 for i in [A, S, AB, AS, SB]
     add(Q, i)
