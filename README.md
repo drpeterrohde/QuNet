@@ -65,9 +65,9 @@ A = BasicNode("A")
 B = BasicNode("B")
 S = PlanSatNode("S")
 
-B.location = Coords(500, 0, 0)
+B.location = Coords(500,0,0)
 S.location = Coords(-2000,0,1000)
-S.velocity = Velocity(1000, 0)
+S.velocity = Velocity(1000,0)
 
 AB = BasicChannel(A, B, exp_cost=true)
 AS = AirChannel(A, S)
