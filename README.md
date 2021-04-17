@@ -57,6 +57,25 @@ This is the QuNet code in Julia that creates that network. Julia modules can be 
 
 ![F8B2F2BD-59E6-4FDE-8A14-183D136A5E0A](https://user-images.githubusercontent.com/4382522/115102036-ea978080-9f8b-11eb-872f-143fb3e438f3.jpeg)
 
+```julia
+Q = QNetwork()
+A = BasicNode("A")
+B = BasicNode("B")
+S = PlanSatNode("S")
+
+B.location = Coords(500, 0, 0)
+S.location = Coords(-2000,0,1000)
+S.velocity = Velocity(1000, 0)
+
+AB = BasicChannel(A, B, exp_cost=true)
+AS = QuNet.AirChannel(A, S)
+SB = QuNet.AirChannel(S, B)
+
+for i in [A, S, AB, AS, SB]
+    add(Q, i)
+end
+```
+
 # Temporal routing & quantum memories
 
 We accommodate for quantum memories by treating them as temporal channels between the respective nodes of identical copies of the underlying graph, where each layer represents the network at a particular point in time.
