@@ -1,15 +1,10 @@
 # QuNet
-A Quantum network simulator and benchmarking tool implemented in Julia.
 
-Have a question about this package?
-Please direct all comments, concerns, and death threats to the chief code monkey:
-Mr. Hudson Leone
-leoneht0@gmail.com
+A quantum network simulator and benchmarking tool based on cost vector analysis, implemented in Julia.
 
-And if you want to talk to his boss:
-Dr. Peter Rohde
-dr.rohde@gmail.com
-
+Authors:
++ Mr. Hudson Leone ([leoneht0@gmail.com](mailto:leoneht0@gmail.com))
++ Dr. Peter Rohde ([dr.rohde@gmail.com](dr.rohde@gmail.com))
 
 # Goal
 
@@ -19,7 +14,7 @@ Efficient simulation of multi-user entanglement distribution networks using cost
 
 Classical networks rely on path-finding algorithms (e.g shortest path a la Dijkstra) for optimal packet routing. Quantum networks can employ multi-path routing, whereby multiple independently routed Bell pairs are purified into one of higher fidelity.
 
-![1F8AF4E2-0408-45B0-98B9-9ABA8FD10FB1](https://user-images.githubusercontent.com/4382522/115101952-634a0d00-9f8b-11eb-986e-2bb964d8273b.jpeg)
+![1F8AF4E2-0408-45B0-98B9-9ABA8FD10FB1](https://user-images.githubusercontent.com/4382522/115101952-634a0d00-9f8b-11eb-986e-2bb964d8273b.jpeg){:height="50%" width="50%"}
 
 # Entanglement swapping & purification
 
@@ -46,7 +41,7 @@ Here Alice & Bob have the option of communicating via:
 
 # Code example
 
-This is the QuNet code in Julia that creates that network. Julia modules can be called from Python or run in Jupyter notebooks too. You can learn more about Julia at www.julialang.org.
+This is the QuNet code in Julia that creates that network. Julia modules can be called from Python or run in Jupyter notebooks too. You can learn more about Julia at [www.julialang.org](https://www.julialang.org).
 
 ![F8B2F2BD-59E6-4FDE-8A14-183D136A5E0A](https://user-images.githubusercontent.com/4382522/115102036-ea978080-9f8b-11eb-872f-143fb3e438f3.jpeg)
 
