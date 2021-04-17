@@ -1,17 +1,6 @@
-<script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax: {inlineMath:[['$','$']]}});</script>
-<script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=default' async></script>
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
 
-
-~``$G=\frac{\partial C}{\partial t}$``~
-test
-``G=\frac{\partial C}{\partial t}``
-`$G=\frac{\partial C}{\partial t}$`
-
-ting
-
-```math
-f(a) = \frac{1}{2\pi}\int_{0}^{2\pi} (\alpha+R\cos(\theta))d\theta
-```
+$$ a^b $$
 
 # About
 
