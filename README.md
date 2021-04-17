@@ -18,9 +18,9 @@ Developers:
 
 # Goal
 
-QuNet is a highly-scalable, multi-user quantum network simulator and benchmarking tool implemented in Julia. It relies on efficient algorithms for performing multi-user routing and congestion avoidance using quantum memories. QuNet focusses on the specific task of distributing entangled Bell pairs,
+QuNet is a highly-scalable, multi-user quantum network simulator and benchmarking tool implemented in Julia. It relies on efficient algorithms for performing multi-user routing and congestion avoidance using quantum memories. QuNet focusses on the specific task of distributing entangled Bell pairs between users ($$A$$ and $$B$$),
 <p align="center">
-$$|\Psi^+\rangle = \frac{1}{\sqrt{2}}(|00\rangle + |11\rangle).$$
+$$|\Psi^+\rangle = \frac{1}{\sqrt{2}}(|0\rangle_A|0\rangle_B + |1\rangle_A|1\rangle_B).$$
 </p>
 These can subsequently be employed in state teleportation protocols to transmit arbitrary quantum states, or be applied to quantum key distribution, distributed quantum computing, or other entanglement-based quantum protocols.
 
