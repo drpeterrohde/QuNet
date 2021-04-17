@@ -1,4 +1,4 @@
-# QuNet
+# About
 
 A quantum network simulator and benchmarking tool based on cost vector analysis, implemented in Julia.
 
