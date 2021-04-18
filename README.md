@@ -46,7 +46,7 @@ This is a common approach amongst experimentalists, who typically consider loss 
 
 We can apply a similar approach to depolarising channels whose quantum process is given by,
 <p align="center">
-$$\mathcal{E}_\mathrm{depol}(\rho) = p\rho + (1-p)\frac{\mathbb{I}}{2},$$
+$$\mathcal{E}_\mathrm{depol}(\rho) = p\rho + (1-p)\frac{I}{2},$$
 </p>
 or to dephasing channels,
 <p align="center">
