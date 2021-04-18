@@ -26,6 +26,33 @@ These can subsequently be employed in state teleportation protocols to transmit 
 
 QuNet uses a _cost vector_ methodology. Rather than track quantum states themselves, we track their associated _costs_ as they traverse the network. Costs are arbitrary properties that accumulate additively as qubits traverse networks. We can express physical degradation such as loss, dephasing or depolarising processes in this form, and also non-physical costs such as monetary ones. Tracking the accumulation of costs acting on Bell pairs is equivalent to directly tracking the states themselves.
 
+# Quantum channels
+
+Quantum channels can be represented in the quantum process formalism using the Kraus (or operator-sum) representation. In many useful instances these can be converted to additive metrics amenable to our cost vector formalism.
+
+Consider the loss channel,
+<p align="center">
+$$\mathcal{E}_\mathrm{loss}(\hat\rho) = p\hat\rho + (1-p)|vac\rangle\langle vac|,$$
+</p>
+where $$p$$ is the probability of a qubit not being lost. If multiple such channels are applied in series the $$p$$'s multiply,
+<p align="center">
+$$p_\mathrm{total} = \prod_i p_i.$$
+</p>
+However by converting to logarithmic form we can make this additive,
+<p align="center">
+$$-\log(p_\mathrm{net} = -\sum_i \log(p_i).$$
+</p>
+This is a common approach amongst experimentalists, who typically consider loss over fibre in terms of decibels per unit distance (dB/m).
+
+We can apply a similar approach to depolarising channels whose quantum process is given by,
+<p align="center">
+$$\mathcal{E}_\mathrm{depol}(\hat\rho) = p\hat\rho + (1-p)\frac{\mathbb{I}}{2},$$
+</p>
+or to dephasing channels,
+<p align="center">
+$$\mathcal{E}_\mathrm{deph}(\hat\rho) = p\hat\rho + (1-p)\frac{\hat\rho+\hat{Z}\hat\rho\hat{Z}}{2}.$$
+</p>
+
 # Multi-path routing
 
 Classical networks rely on path-finding algorithms (e.g shortest path a la Dijkstra) for optimal packet routing. Quantum networks can employ multi-path routing, whereby multiple independently routed Bell pairs are purified into one of higher fidelity.
