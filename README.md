@@ -32,7 +32,7 @@ Quantum channels can be represented in the quantum process formalism using the K
 
 Consider the loss channel,
 <p align="center">
-$$\mathcal{E}_\mathrm{loss}(\hat\rho) = p\hat\rho + (1-p)|vac\rangle\langle vac|,$$
+$$\mathcal{E}_\mathrm{loss}(\rho) = p\rho + (1-p)|vac\rangle\langle vac|,$$
 </p>
 where $$p$$ is the probability of a qubit not being lost. If multiple such channels are applied in series the $$p$$'s multiply,
 <p align="center">
@@ -40,17 +40,17 @@ $$p_\mathrm{total} = \prod_i p_i.$$
 </p>
 However by converting to logarithmic form we can make this additive,
 <p align="center">
-$$-\log(p_\mathrm{net} = -\sum_i \log(p_i).$$
+$$-\log(p_\mathrm{net}) = -\sum_i \log(p_i).$$
 </p>
 This is a common approach amongst experimentalists, who typically consider loss over fibre in terms of decibels per unit distance (dB/m).
 
 We can apply a similar approach to depolarising channels whose quantum process is given by,
 <p align="center">
-$$\mathcal{E}_\mathrm{depol}(\hat\rho) = p\hat\rho + (1-p)\frac{\mathbb{I}}{2},$$
+$$\mathcal{E}_\mathrm{depol}(\rho) = p\rho + (1-p)\frac{\mathbb{I}}{2},$$
 </p>
 or to dephasing channels,
 <p align="center">
-$$\mathcal{E}_\mathrm{deph}(\hat\rho) = p\hat\rho + (1-p)\frac{\hat\rho+\hat{Z}\hat\rho\hat{Z}}{2}.$$
+$$\mathcal{E}_\mathrm{deph}(\rho) = p\rho + (1-p)\frac{\rho+Z\rho Z}{2}.$$
 </p>
 
 # Multi-path routing
