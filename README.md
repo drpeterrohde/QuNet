@@ -48,10 +48,11 @@ We can apply a similar approach to depolarising channels whose quantum process i
 <p align="center">
 $$\mathcal{E}_\mathrm{depol}(\rho) = p\rho + (1-p)\frac{I}{2},$$
 </p>
-or to dephasing channels,
+and $$-\log(p)$$ acts additively. Or with some algebraic manipulation we can apply this to dephasing channels,
 <p align="center">
-$$\mathcal{E}_\mathrm{deph}(\rho) = p\rho + (1-p)\frac{\rho+Z\rho Z}{2}.$$
+$$\mathcal{E}_\mathrm{deph}(\rho) = (2p-1)\rho + (1-p)(\rho + Z\rho Z),$$
 </p>
+where $$-\log(2p-1)$$ acts as our additive dephasing metric.
 
 # Multi-path routing
 
