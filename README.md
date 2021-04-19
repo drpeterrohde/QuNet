@@ -52,7 +52,7 @@ and $$m=-\log(p)$$ acts additively. With some algebraic manipulation we can appl
 <p align="center">
 $$\mathcal{E}_\mathrm{deph}(\rho) = (2p-1)\rho + (1-p)(\rho + Z\rho Z),$$
 </p>
-where $$-\log(2p-1)$$ acts as our additive dephasing metric. Note this representation of the dephasing channel has been algebraically manipulated into an unaffected term ($$\rho$$), and a completely dephased term ($$\rho+Z\rho Z$) which is a steady-state of the dephasing channel. This approach could also be applied to bit-flip ($$X$$) channels, bit-phase-flip ($$Y$$) channels, or amplitude damping channels.
+where $$-\log(2p-1)$$ acts as our additive dephasing metric. Note this representation of the dephasing channel has been algebraically manipulated into an unaffected term ($$\rho$$), and a completely dephased term ($$\rho+Z\rho Z$$) which is the steady-state of the channel. This approach could also be applied to bit-flip ($$X$$) channels, bit-phase-flip ($$Y$$) channels, or amplitude damping channels.
 
 # Multi-path routing
 
