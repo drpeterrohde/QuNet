@@ -34,7 +34,7 @@ Consider the loss channel,
 <p align="center">
 $$\mathcal{E}_\mathrm{loss}(\rho) = p\rho + (1-p)|vac\rangle\langle vac|,$$
 </p>
-where $$p$$ is the probability of a qubit not being lost. If multiple such channels are applied in series the $$p$$'s multiply,
+where $$p$$ is the probability of a qubit not being lost, otherwise replaced with the vacuum state $$|vac\rangle$$. If multiple such channels are applied in series the $$p$$'s multiply,
 <p align="center">
 $$p_\mathrm{total} = \prod_i p_i.$$
 </p>
@@ -42,24 +42,26 @@ However by converting to logarithmic form we can make this additive,
 <p align="center">
 $$-\log(p_\mathrm{net}) = -\sum_i \log(p_i).$$
 </p>
-This is a common approach amongst experimentalists, who typically consider loss over fibre in terms of decibels per unit distance (dB/m).
+Now $$m_i=-\log(p_i)$$ can be used as an additive edge weight. This is a common approach amongst experimentalists, who typically consider loss over fibre in terms of decibels per unit distance (dB/m).
 
 We can apply a similar approach to depolarising channels whose quantum process is given by,
 <p align="center">
 $$\mathcal{E}_\mathrm{depol}(\rho) = p\rho + (1-p)\frac{I}{2},$$
 </p>
-and $$-\log(p)$$ acts additively. Or with some algebraic manipulation we can apply this to dephasing channels,
+and $$m=-\log(p)$$ acts additively. With some algebraic manipulation we can apply this to dephasing channels,
 <p align="center">
 $$\mathcal{E}_\mathrm{deph}(\rho) = (2p-1)\rho + (1-p)(\rho + Z\rho Z),$$
 </p>
-where $$-\log(2p-1)$$ acts as our additive dephasing metric.
+where $$-\log(2p-1)$$ acts as our additive dephasing metric. Note this representation of the dephasing channel has been algebraically manipulated into an unaffected term ($$\rho$$), and a completely dephased term ($$\rho+Z\rho Z$) which is a steady-state of the dephasing channel. This approach could also be applied to bit-flip ($$X$$) channels, bit-phase-flip ($$Y$$) channels, or amplitude damping channels.
 
 # Multi-path routing
 
-Classical networks rely on path-finding algorithms (e.g shortest path a la Dijkstra) for optimal packet routing. Quantum networks can employ multi-path routing, whereby multiple independently routed Bell pairs are purified into one of higher fidelity.
+Classical networks rely on path-finding algorithms (e.g shortest path à la Dijkstra) for optimal packet routing. This is highly efficient, since Dijkstra's algorithm has worst case $$O(V^2)$$ runtime in the number of graph vertices $$V$$. Quantum networks can employ multi-path routing, whereby multiple independently routed Bell pairs are purified into one of higher fidelity.
 
 <p align="center"><img src="https://user-images.githubusercontent.com/4382522/115101952-634a0d00-9f8b-11eb-986e-2bb964d8273b.jpeg" width="50%"></p>
 <!--- ![1F8AF4E2-0408-45B0-98B9-9ABA8FD10FB1](https://user-images.githubusercontent.com/4382522/115101952-634a0d00-9f8b-11eb-986e-2bb964d8273b.jpeg) --->
+
+We implement multi-path routing via multiple application of shortest path routing, where subsequent rounds exclude previously consumed routes from consideration.
 
 # Entanglement swapping & purification
 
@@ -82,11 +84,13 @@ These primitives provide simple substitution rules for graph reduction.
 
 # Network abstraction
 
-Quantum repeaters, comprising classically-controlled (and sometimes randomised) sequences of swapping and purification operations, can be reduced to a single virtual link capturing their average cost vector, thereby bypassing the need for directly accommodating non-deterministic or classically-controlled operations, maintaining compatability with the QuNet framework. For large networks it may not always be necessary to understand the full dynamics across all nodes and channels. Instead we might focus higher-level abstractions of the network, which consider the dynamics between designated subnetworks or regions, reducing computational load.
+Quantum repeaters, comprising classically-controlled (and sometimes randomised) sequences of swapping and purification operations, can be reduced to a single virtual link capturing their average cost vector, thereby bypassing the need for directly accommodating non-deterministic or classically-controlled operations, maintaining compatability with the QuNet framework. Similarly, SneakerNet channels, whereby a large number of error-corrected qubits are physically transported can be reduced to an equivalent cost vector too.
+
+For large networks it may not always be necessary to understand the full dynamics across all nodes and channels. Instead we might focus higher-level abstractions of the network, which consider the dynamics between designated subnetworks or regions, reducing computational load.
 
 # Space-based networks
 
-Here Alice & Bob have the option of communicating via:
+QuNet can accommodate both static and dynamic nodes and channels. Here Alice & Bob have the option of communicating via:
 + A static ground-based fibre link.
 + A LEO satellite passing overhead through atmospheric free-space channels, which dynamically update.
 + Exploiting both and purifying them together (multi-path routing).
@@ -128,7 +132,7 @@ end
 
 # Temporal routing & quantum memories
 
-We accommodate for quantum memories by treating them as temporal channels between the respective nodes of identical copies of the underlying graph, where each layer represents the network at a particular point in time.
+We accommodate for quantum memories by treating them as temporal channels between the respective nodes of identical copies of the underlying graph, where each layer represents the network at a particular point in time. This is far more efficient than naïve combinatoric congestion mitigation techniques, relying on the same underlying routing algorithms applied to a graph with a simple linear overhead in size.
 
 <p align="center"><img src="https://user-images.githubusercontent.com/4382522/115102057-06028b80-9f8c-11eb-9f8b-76c8c58d38f5.jpeg" width="100%" align="middle"></p>
 <!--- ![FE76132D-706C-488B-A6C8-B6B1536283BA](https://user-images.githubusercontent.com/4382522/115102057-06028b80-9f8c-11eb-9f8b-76c8c58d38f5.jpeg) --->
@@ -183,7 +187,9 @@ Through unification of remote computational assets:
 + Classical computers, $$\lambda=1$$. There is no computational enhancement.
 + Quantum computers $$\lambda>1$$, in the best case $$\lambda=\mathrm{exp}(N)$$. We achieve exponential computational enhancement.
 
-# The vision, the book
+# The vision
+
+In a future world where scalable quantum computers are available and ubiquitous it is clear that networking them together has the potential to provide exponentially more computational power than the sum of the parts. The big question is whether the cost of constructing the global quantum communications infrastructure necessary to facilitate this is justified by the economic return associated with this computational enhancement.
 
 Our vision for the quantum internet is presented in the upcoming book [“The Quantum Internet”](https://cup.org/2Q7UpM4) published by Cambridge University Press.
 
