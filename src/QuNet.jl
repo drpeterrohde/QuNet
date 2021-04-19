@@ -10,7 +10,7 @@ using Documenter, Colors, Plots, LaTeXStrings
 # using SatelliteToolbox
 # using QuadGK
 
-import SparseArrays:dropzeros!
+import SparseArrays: dropzeros!
 import Base: *, print, string
 import GraphPlot: gplot
 import QuadGK: quadgk

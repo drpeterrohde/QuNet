@@ -5,6 +5,9 @@ function showtypetree(T, level = 0)
     end
 end
 
+"""
+Display the QuNet type tree
+"""
 function qunet_type_tree()
     showtypetree(QuNet.QObject)
 end

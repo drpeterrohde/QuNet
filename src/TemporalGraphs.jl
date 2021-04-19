@@ -1,4 +1,4 @@
-mutable struct TemporalGraph
+mutable struct TemporalGraph <: QObject
     #graph::SimpleWeightedDiGraph
     graph::Dict
     nv::Int64
