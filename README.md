@@ -7,7 +7,7 @@
 
 # About
 
-The paper _"QuNet: Cost vector analysis & multi-path entanglement routing in quantum networks"_ [https://arxiv.org/abs/2105.00418](https://arxiv.org/abs/2105.00418) (Leone, Miller, Singh, Langford & Rohde, 2021) presents the theory, design and initial results for QuNet.
+The paper _"QuNet: Cost vector analysis & multi-path entanglement routing in quantum networks"_ ([https://arxiv.org/abs/2105.00418](https://arxiv.org/abs/2105.00418)) (Leone, Miller, Singh, Langford & Rohde, 2021) presents the theory, design and initial results for QuNet.
 
 Developers:
 + Hudson Leone ([leoneht0@gmail.com](mailto:leoneht0@gmail.com))
